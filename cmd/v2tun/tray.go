@@ -1,21 +1,14 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
 import (
-	_ "embed"
 	goruntime "runtime"
 	"time"
 
 	"fyne.io/systray"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
-
-//go:embed assets/tray_on.ico
-var trayIconOn []byte
-
-//go:embed assets/tray_off.ico
-var trayIconOff []byte
 
 // startTray runs the notification-area icon on its own OS thread (the tray
 // window must be served by the thread that created it).
@@ -25,6 +18,20 @@ func (a *App) startTray() {
 		goruntime.LockOSThread()
 		systray.Run(a.trayReady, nil)
 	}()
+}
+
+// hideWindow sends the window to the tray, or minimises it when this desktop
+// has no tray (GNOME without the AppIndicator extension), so v2tun stays
+// reachable.
+func (a *App) hideWindow() {
+	if a.ctx == nil {
+		return
+	}
+	if trayAvailable() {
+		runtime.WindowHide(a.ctx)
+	} else {
+		runtime.WindowMinimise(a.ctx)
+	}
 }
 
 func (a *App) showWindow() {
@@ -59,7 +66,7 @@ func (a *App) trayReady() {
 	mShow := systray.AddMenuItem(T("Show v2tun"), "")
 	mToggle := systray.AddMenuItem(T("Connect"), "")
 	systray.AddSeparator()
-	mAutostart := systray.AddMenuItemCheckbox(T("Start with Windows"), "", a.GetAutostart())
+	mAutostart := systray.AddMenuItemCheckbox(T(pick("Start with Windows", "Start at login")), "", a.GetAutostart())
 	mAutoConnect := systray.AddMenuItemCheckbox(T("Auto-connect on start"), "", a.GetSettings().AutoConnect)
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem(T("Quit (disconnect tunnel)"), "")
@@ -71,7 +78,7 @@ func (a *App) trayReady() {
 		if l := getLang(); l != lastLang { // language changed in the window
 			lastLang, lastOn = l, nil
 			mShow.SetTitle(T("Show v2tun"))
-			mAutostart.SetTitle(T("Start with Windows"))
+			mAutostart.SetTitle(T(pick("Start with Windows", "Start at login")))
 			mAutoConnect.SetTitle(T("Auto-connect on start"))
 			mQuit.SetTitle(T("Quit (disconnect tunnel)"))
 		}

@@ -4,13 +4,15 @@ import (
 	"crypto/tls"
 	"net"
 	"net/netip"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestRules(t *testing.T) {
 	r := compileRules(Settings{
-		AppMode: modeExclude, Apps: []string{"telegram.exe", `C:\Games\game.exe`},
+		AppMode: modeExclude, Apps: []string{"telegram.exe", osPath(`C:\Games\game.exe`)},
 		DomainMode: modeExclude, Domains: []string{".lan", "*.example.org", "10.0.0.0/8", "example.com"},
 	})
 	ip := netip.MustParseAddr("1.2.3.4")
@@ -28,11 +30,11 @@ func TestRules(t *testing.T) {
 			t.Errorf("domain %q %s: got %v", c.domain, c.ip, got)
 		}
 	}
-	if !r.appDirect(`C:\Users\x\AppData\Telegram.exe`) || !r.appDirect(`c:\games\GAME.exe`) || r.appDirect(`C:\x\chrome.exe`) {
+	if !r.appDirect(osPath(`C:\Users\x\AppData\Telegram.exe`)) || !r.appDirect(osPath(`c:\games\GAME.exe`)) || r.appDirect(osPath(`C:\x\chrome.exe`)) {
 		t.Error("app exclude")
 	}
 	inc := compileRules(Settings{AppMode: modeInclude, Apps: []string{"chrome.exe"}, DomainMode: modeInclude, Domains: []string{"google.com"}})
-	if inc.appDirect(`C:\x\chrome.exe`) || !inc.appDirect(`C:\x\telegram.exe`) {
+	if inc.appDirect(osPath(`C:\x\chrome.exe`)) || !inc.appDirect(osPath(`C:\x\telegram.exe`)) {
 		t.Error("app include")
 	}
 	if inc.domainDirect("mail.google.com", ip) || !inc.domainDirect("bing.com", ip) {
@@ -55,4 +57,13 @@ func TestSniff(t *testing.T) {
 	if h := sniffHost([]byte("GET / HTTP/1.1\r\nHost: shop.example.com:8080\r\n\r\n")); h != "shop.example.com" {
 		t.Fatalf("host = %q", h)
 	}
+}
+
+// osPath turns a Windows test path into this system's form (on Linux:
+// C:\Games\game.exe -> /c/Games/game.exe).
+func osPath(p string) string {
+	if filepath.Separator == '\\' {
+		return p
+	}
+	return "/" + strings.ReplaceAll(strings.Replace(p, ":", "", 1), "\\", "/")
 }

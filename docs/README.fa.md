@@ -4,7 +4,7 @@
 
 [English](../README.md) | **فارسی** | [العربية](README.ar.md) | [中文](README.zh.md)
 
-تونل سراسری ویندوز با کیل‌سوئیچ. v2tun ترافیک همه‌ی برنامه‌های کامپیوتر را از پراکسی عبور می‌دهد؛ یا با هسته‌ی داخلی خودش (سرورها و اشتراک‌ها داخل برنامه) یا از طریق پورت SOCKS برنامه‌ی [v2rayN](https://github.com/2dust/v2rayN) که در حال اجراست.
+تونل سراسری با کیل‌سوئیچ برای **ویندوز و لینوکس**. v2tun ترافیک همه‌ی برنامه‌های کامپیوتر را از پراکسی عبور می‌دهد؛ یا با هسته‌ی داخلی خودش (سرورها و اشتراک‌ها داخل برنامه) یا از طریق پورت SOCKS برنامه‌ی [v2rayN](https://github.com/2dust/v2rayN) که در حال اجراست.
 
 <p align="center">
   <img src="screenshots/connect.png" width="260" alt="Connect">
@@ -36,13 +36,13 @@
 - آیکون کنار ساعت، اجرا با ویندوز (بدون پیغام UAC)، اتصال خودکار.
 - رابط کاربری انگلیسی، فارسی، عربی و چینی.
 
-## پیش‌نیازها
+## پیش‌نیازهای ویندوز
 
 - ویندوز ۱۰ یا ۱۱، ‏۶۴ بیتی (x64).
 - دسترسی Administrator (برای کارت شبکه‌ی تونل، مسیرها و فایروال).
 - [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) (در ویندوز ۱۱ و ویندوز ۱۰ به‌روز وجود دارد).
 
-## نصب
+## نصب در ویندوز
 
 1. فایل `v2tun-<version>-windows-amd64.zip` را از [Releases](https://github.com/smma91/v2tun/releases) دانلود کنید و با `SHA256SUMS.txt` مقایسه کنید.
 2. آن را در هر پوشه‌ای باز کنید و `v2tun.exe` را اجرا کنید (دسترسی Administrator می‌خواهد).
@@ -52,6 +52,25 @@
 تنظیمات، سرورها و گزارش در `C:\ProgramData\v2tun` ذخیره می‌شوند و فقط Administrator به آن‌ها دسترسی دارد.
 
 > **هشدار آنتی‌ویروس.** ‏v2tun فایروال، مسیرها، DNS و فایل hosts را تغییر می‌دهد و درایور شبکه بارگذاری می‌کند. نسخه‌های بدون امضای دیجیتال چنین ابزارهایی گاهی به‌اشتباه ویروس تشخیص داده می‌شوند. همیشه می‌توانید فایل exe را خودتان از همین سورس بسازید.
+
+## لینوکس
+
+**پیش‌نیاز:** توزیع ۶۴ بیتی (x86_64) با WebKitGTK 4.1؛ مثلاً Ubuntu 22.04 به بعد، Debian 12، Linux Mint 21 یا Fedora 37 به بعد.
+
+فایل مناسب را از [Releases](https://github.com/smma91/v2tun/releases) دانلود کنید:
+
+| بسته | نصب |
+|---|---|
+| `.deb` (Ubuntu, Debian, Mint) | `sudo apt install ./v2tun_<version>_amd64.deb` |
+| `.rpm` (Fedora) | `sudo dnf install ./v2tun-<version>-1.x86_64.rpm` |
+| `.AppImage` | `chmod +x v2tun-*.AppImage` |
+| `.tar.gz` | `sudo ./install.sh` |
+
+بعد **v2tun** را از منوی برنامه‌ها اجرا کنید.
+
+- v2tun با کاربر root اجرا نمی‌شود؛ پنجره با کاربر خودتان باز می‌شود و برنامه فقط دو مجوز شبکه‌ی لازم (`cap_net_admin` و `cap_net_raw`) را می‌گیرد. بسته‌ها و `install.sh` این مجوز را می‌دهند. اگر نداشته باشد (مثلاً AppImage)، دکمه‌ی **دادن اجازه** نمایش داده می‌شود و فقط یک بار رمز را می‌پرسد. AppImage در این مرحله خودش را در `/opt/v2tun` نصب می‌کند.
+- برای آیکون کنار ساعت، میزکار باید tray داشته باشد (KDE، Xfce، Cinnamon و Ubuntu دارند؛ در GNOME ساده افزونه‌ی AppIndicator را نصب کنید). بدون tray، بستن پنجره آن را کوچک می‌کند.
+- تنظیمات و سرورها در `~/.config/v2tun` ذخیره می‌شوند.
 
 ## ساخت از سورس
 
@@ -67,7 +86,21 @@ cd v2tun
 
 </div>
 
-خروجی یک فایل `v2tun.exe` است و `wintun.dll` و `libcronet.dll` داخل آن قرار دارند. توضیح تست‌ها و ترجمه‌ها در [README انگلیسی](../README.md) آمده است.
+خروجی یک فایل `v2tun.exe` است و `wintun.dll` و `libcronet.dll` داخل آن قرار دارند.
+
+**لینوکس:**
+
+<div dir="ltr">
+
+```sh
+sudo apt install build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+./build.sh
+sudo setcap cap_net_admin,cap_net_raw+ep ./v2tun
+```
+
+</div>
+
+خروجی `v2tun` و `libcronet.so` است که باید کنار هم بمانند. توضیح تست‌ها و ترجمه‌ها در [README انگلیسی](../README.md) آمده است.
 
 ## گزارش مشکل و پیشنهاد
 

@@ -22,10 +22,13 @@ for (const m of html.matchAll(/(?:placeholder|title|aria-label)="([^"]+)"/g)) if
 
 const js = fs.readFileSync(path.join(root, "frontend/app.js"), "utf8");
 for (const m of js.matchAll(/\bt\(\s*(["`])((?:\\.|(?!\1).)*)\1/g)) out.add(m[1] === '"' ? JSON.parse('"' + m[2] + '"') : m[2]);
+const linux = js.match(/const LINUX_TEXT = \{([\s\S]*?)\n\};/);
+if (linux) for (const m of linux[1].matchAll(/"((?:\\.|[^"\\])*)"/g)) out.add(JSON.parse('"' + m[1] + '"'));
 
 for (const f of fs.readdirSync(root).filter((f) => f.endsWith(".go") && !f.endsWith("_test.go"))) {
   const src = fs.readFileSync(path.join(root, f), "utf8");
   for (const m of src.matchAll(/\b(?:T|trErr|logf\([^,()]+,)\s*\(?\s*"((?:\\.|[^"\\])*)"/g)) out.add(JSON.parse('"' + m[1] + '"'));
+  for (const m of src.matchAll(/\bpick\(\s*"((?:\\.|[^"\\])*)",\s*"((?:\\.|[^"\\])*)"/g)) { out.add(JSON.parse('"' + m[1] + '"')); out.add(JSON.parse('"' + m[2] + '"')); }
 }
 const used = new Set(out);
 for (const s of out) if (literal(s)) out.delete(s);

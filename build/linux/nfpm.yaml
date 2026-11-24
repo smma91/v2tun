@@ -1,0 +1,50 @@
+# .deb and .rpm packages (https://nfpm.goreleaser.com). Used by package.sh.
+name: v2tun
+arch: amd64
+platform: linux
+version: ${VERSION}
+section: net
+priority: optional
+maintainer: smma91 <27195992+smma91@users.noreply.github.com>
+description: |
+  System-wide tunnel with kill switch.
+  Sends the traffic of every app through a proxy, using the built-in sing-box
+  core (servers and subscriptions inside the app) or a running v2rayN.
+homepage: https://github.com/smma91/v2tun
+license: GPL-3.0-or-later
+
+contents:
+  - src: ./dist/stage/v2tun
+    dst: /opt/v2tun/v2tun
+    file_info: { mode: 0755 }
+  - src: ./dist/stage/libcronet.so
+    dst: /opt/v2tun/libcronet.so
+    file_info: { mode: 0644 }
+  - src: /opt/v2tun/v2tun
+    dst: /usr/bin/v2tun
+    type: symlink
+  - src: ./build/linux/v2tun.desktop
+    dst: /usr/share/applications/v2tun.desktop
+  - src: ./cmd/v2tun/frontend/icon.png
+    dst: /usr/share/icons/hicolor/256x256/apps/v2tun.png
+  - src: ./LICENSE
+    dst: /usr/share/doc/v2tun/LICENSE
+  - src: ./THIRD_PARTY_NOTICES.md
+    dst: /usr/share/doc/v2tun/THIRD_PARTY_NOTICES.md
+
+scripts:
+  postinstall: ./build/linux/postinstall.sh
+
+overrides:
+  deb:
+    depends:
+      - libgtk-3-0 | libgtk-3-0t64
+      - libwebkit2gtk-4.1-0
+      - libcap2-bin
+    recommends:
+      - pkexec | policykit-1
+  rpm:
+    depends:
+      - gtk3
+      - webkit2gtk4.1
+      - libcap

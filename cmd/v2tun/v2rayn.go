@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -13,22 +13,25 @@ import (
 
 // Proxy cores v2rayN can run. Their own traffic (to the proxy server, and
 // "direct" rules such as geoip:ir) must bypass the tunnel, otherwise it loops.
+// (Names without ".exe": the same list is used on Windows and Linux.)
 var coreNames = map[string]bool{
-	"xray.exe": true, "v2ray.exe": true, "sing-box.exe": true, "mihomo.exe": true,
-	"clash.exe": true, "clash-meta.exe": true, "hysteria.exe": true, "hysteria2.exe": true,
-	"tuic-client.exe": true, "naive.exe": true, "juicity-client.exe": true, "brook.exe": true,
-	"shadowquic.exe": true,
+	"xray": true, "v2ray": true, "sing-box": true, "mihomo": true,
+	"clash": true, "clash-meta": true, "hysteria": true, "hysteria2": true,
+	"tuic-client": true, "naive": true, "juicity-client": true, "brook": true,
+	"shadowquic": true,
+}
+
+func coreName(p string) bool {
+	return coreNames[strings.TrimSuffix(strings.ToLower(filepath.Base(p)), ".exe")]
 }
 
 func findV2rayNDir() string {
-	if p := processPathByName("v2rayN.exe"); p != "" {
+	if p := processPathByName(v2rayNExe); p != "" {
 		return filepath.Dir(p)
 	}
-	home, _ := os.UserHomeDir()
 	var pats []string
-	for _, base := range []string{`C:\`, `D:\`, os.Getenv("ProgramFiles"), home,
-		filepath.Join(home, "Desktop"), filepath.Join(home, "Downloads"), filepath.Join(home, "Documents")} {
-		pats = append(pats, filepath.Join(base, "v2rayN*", "v2rayN.exe"), filepath.Join(base, "v2rayN*", "*", "v2rayN.exe"))
+	for _, base := range v2rayNSearchDirs() {
+		pats = append(pats, filepath.Join(base, "v2rayN*", v2rayNExe), filepath.Join(base, "v2rayN*", "*", v2rayNExe))
 	}
 	// Several copies are common: take the one used most recently.
 	best, bestMod := "", int64(-1)
@@ -51,7 +54,7 @@ func coreExecutables(dir string) []string {
 		return out
 	}
 	filepath.WalkDir(filepath.Join(dir, "bin"), func(p string, d os.DirEntry, err error) error {
-		if err == nil && !d.IsDir() && coreNames[strings.ToLower(d.Name())] {
+		if err == nil && !d.IsDir() && coreName(d.Name()) {
 			out = append(out, p)
 		}
 		return nil
@@ -60,7 +63,7 @@ func coreExecutables(dir string) []string {
 }
 
 func isCorePath(p string) bool {
-	return p != "" && coreNames[strings.ToLower(filepath.Base(p))]
+	return p != "" && coreName(p)
 }
 
 var yamlServerRE = regexp.MustCompile(`(?m)^\s*-?\s*server:\s*["']?([^"'\s#]+)`)
@@ -140,4 +143,18 @@ func configModTime(dir string) int64 {
 		}
 	}
 	return newest
+}
+
+// runningCores lists the proxy-core executables that are running now
+// (xray, sing-box, … started by v2rayN or any similar client).
+func runningCores() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, p := range allProcessPaths() {
+		if isCorePath(p) && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			out = append(out, p)
+		}
+	}
+	return out
 }

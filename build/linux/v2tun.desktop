@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=v2tun
+GenericName=VPN tunnel
+Comment=System-wide tunnel with kill switch
+Exec=/opt/v2tun/v2tun
+Icon=v2tun
+Terminal=false
+Categories=Network;
+Keywords=vpn;proxy;tunnel;v2ray;xray;sing-box;
+StartupWMClass=v2tun

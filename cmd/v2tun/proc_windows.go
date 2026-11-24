@@ -146,20 +146,6 @@ func allProcessPaths() []string {
 	return out
 }
 
-// runningCores lists the proxy-core executables that are running now
-// (xray, sing-box, … started by v2rayN or any similar client).
-func runningCores() []string {
-	seen := map[string]bool{}
-	var out []string
-	for _, p := range allProcessPaths() {
-		if isCorePath(p) && !seen[strings.ToLower(p)] {
-			seen[strings.ToLower(p)] = true
-			out = append(out, p)
-		}
-	}
-	return out
-}
-
 func processPathByName(name string) string {
 	snap, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if err != nil {

@@ -4,12 +4,25 @@ const api = () => window.go.main.App;
 const LANGS = { en: { dir: "ltr", locale: "en-US" }, fa: { dir: "rtl", locale: "fa-IR" }, ar: { dir: "rtl", locale: "ar-EG" }, zh: { dir: "ltr", locale: "zh-CN" } };
 let lang = "en";
 let dict = {};
+let platform = "windows";
+let needsPermission = false;
+// On Linux, texts that name Windows are swapped for these (both are keys of
+// i18n.json; tools/extract.js reads this list).
+const LINUX_TEXT = {
+  "All Windows apps": "All apps",
+  "Sets the Windows time zone to the server's country": "Sets the system time zone to the server's country",
+  "Choose an .exe file": "Choose a program",
+  "Set Windows proxy": "Set system proxy",
+  "Start with Windows": "Start at login",
+  "After you sign in to Windows, v2tun starts in the tray (no administrator prompt)": "After you log in, v2tun starts in the tray (no password prompt)",
+};
 // Loaded before anything is drawn, so no text is ever built from a missing dictionary.
 const i18nReady = fetch("i18n.json").then((r) => r.json()).then((d) => (dict = d)).catch((e) => console.error(e));
 const norm = (s) => s.replace(/\s+/g, " ").trim();
 
 // t translates an English key; {0}, {1}… are replaced by the arguments.
 function t(key, ...args) {
+  if (platform === "linux" && LINUX_TEXT[key]) key = LINUX_TEXT[key];
   let s = lang === "en" ? key : dict[key]?.[lang] ?? dict[norm(key)]?.[lang] ?? key;
   args.forEach((a, i) => (s = s.split(`{${i}}`).join(a)));
   return s;
@@ -120,6 +133,20 @@ function renderAlerts(pre) {
     box.appendChild(d);
   };
   if (status.running) return;
+  if (needsPermission) {
+    const d = document.createElement("div");
+    d.className = "alert warn perm";
+    d.textContent = t("v2tun needs permission to create the tunnel. It is asked only once.") + " ";
+    const b = document.createElement("button");
+    b.className = "btn";
+    b.textContent = t("Grant permission");
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try { await api().GrantPermission(); } catch (e) { b.disabled = false; add("bad", String(e)); }
+    });
+    d.appendChild(b);
+    box.appendChild(d);
+  }
   if (pre.conflict) add("bad", t("Another TUN is active ({0}), e.g. v2rayN's own TUN mode. Turn it off first.", pre.conflict));
   if (settings.proxySource === "builtin") {
     if (!(serversView?.servers || []).some((s) => !s.error)) add("warn", t("No servers yet. Add a link or subscription in the \"Servers\" tab."));
@@ -485,6 +512,7 @@ function fillAdapters(list) {
 }
 
 async function loadAdapters() {
+  if (platform !== "windows") return;
   fillAdapters(await api().ListAdapters());
 }
 
@@ -531,6 +559,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   window.runtime.EventsOn("log", addLog);
   await i18nReady;
   settings = await api().GetSettings();
+  try {
+    platform = (await api().Platform()) || "windows";
+    needsPermission = await api().NeedsPermission();
+  } catch (e) { console.error(e); }
+  document.body.dataset.platform = platform;
+  $("adapterCard").hidden = platform !== "windows"; // Linux: DNS is captured, the connection's DNS stays as it is
   lang = LANGS[settings.lang] ? settings.lang : "en";
   translatePage();
   $("langSel").addEventListener("change", async (e) => {

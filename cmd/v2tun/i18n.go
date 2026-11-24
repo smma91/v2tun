@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -77,6 +77,14 @@ func retranslateArgs(args []any) []any {
 		out[i] = a
 	}
 	return out
+}
+
+// pick returns the wording for this operating system; both are i18n keys.
+func pick(windows, linux string) string {
+	if platform == "linux" {
+		return linux
+	}
+	return windows
 }
 
 // T returns the current-language version of an English string.

@@ -2,7 +2,7 @@
 
 [English](../README.md) | [فارسی](README.fa.md) | [العربية](README.ar.md) | **中文**
 
-带断网保护（Kill Switch）的 Windows 全局隧道。v2tun 让电脑上所有应用的流量都经过代理：可以使用内置核心（在应用内管理服务器和订阅），也可以使用正在运行的 [v2rayN](https://github.com/2dust/v2rayN) 的 SOCKS 端口。
+带断网保护（Kill Switch）的全局隧道，支持 **Windows 和 Linux**。v2tun 让电脑上所有应用的流量都经过代理：可以使用内置核心（在应用内管理服务器和订阅），也可以使用正在运行的 [v2rayN](https://github.com/2dust/v2rayN) 的 SOCKS 端口。
 
 <p align="center">
   <img src="screenshots/connect.png" width="260" alt="Connect">
@@ -34,13 +34,13 @@
 - 托盘图标、开机自启（无 UAC 提示）、自动连接。
 - 界面支持英语、波斯语、阿拉伯语和中文。
 
-## 系统要求
+## Windows 系统要求
 
 - Windows 10 或 11，64 位（x64）。
 - 管理员权限（用于隧道网卡、路由和防火墙）。
 - [WebView2 运行时](https://developer.microsoft.com/microsoft-edge/webview2/)（Windows 11 和已更新的 Windows 10 自带）。
 
-## 安装
+## 在 Windows 上安装
 
 1. 从 [Releases](https://github.com/smma91/v2tun/releases) 下载 `v2tun-<version>-windows-amd64.zip`，并用 `SHA256SUMS.txt` 校验。
 2. 解压到任意位置，运行 `v2tun.exe`（会请求管理员权限）。
@@ -50,6 +50,25 @@
 设置、服务器和日志保存在 `C:\ProgramData\v2tun`（仅管理员可读）。
 
 > **杀毒软件提示。** v2tun 会修改防火墙、路由、DNS 和 hosts 文件，并加载网络驱动。此类工具的未签名版本有时会被误报。你随时可以用本仓库的源码自行编译。
+
+## Linux
+
+**系统要求：** 64 位（x86_64）且带 WebKitGTK 4.1 的发行版，例如 Ubuntu 22.04+、Debian 12、Linux Mint 21 或 Fedora 37+。
+
+从 [Releases](https://github.com/smma91/v2tun/releases) 下载对应文件：
+
+| 安装包 | 安装方式 |
+|---|---|
+| `.deb` (Ubuntu, Debian, Mint) | `sudo apt install ./v2tun_<version>_amd64.deb` |
+| `.rpm` (Fedora) | `sudo dnf install ./v2tun-<version>-1.x86_64.rpm` |
+| `.AppImage` | `chmod +x v2tun-*.AppImage` |
+| `.tar.gz` | `sudo ./install.sh` |
+
+然后从应用菜单启动 **v2tun**。
+
+- v2tun 不以 root 运行：窗口以当前用户运行，程序只获得两项必要的网络权限（`cap_net_admin`、`cap_net_raw`）。安装包和 `install.sh` 会自动设置；若缺少权限（例如 AppImage），界面会显示 **授予权限** 按钮，只需输入一次密码，AppImage 会同时把自己安装到 `/opt/v2tun`。
+- 托盘图标需要桌面支持托盘（KDE、Xfce、Cinnamon、Ubuntu 均支持；纯 GNOME 需安装 AppIndicator 扩展）。没有托盘时，关闭窗口会将其最小化。
+- 设置和服务器保存在 `~/.config/v2tun`。
 
 ## 从源码构建
 
@@ -61,7 +80,18 @@ cd v2tun
 .\build.ps1                 # 或：.\build.ps1 -Version 1.0.0
 ```
 
-生成单个 `v2tun.exe`，`wintun.dll` 和 `libcronet.dll` 已内嵌其中。测试与翻译说明见 [英文 README](../README.md)。
+生成单个 `v2tun.exe`，`wintun.dll` 和 `libcronet.dll` 已内嵌其中。
+
+**Linux：**
+
+
+```sh
+sudo apt install build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+./build.sh
+sudo setcap cap_net_admin,cap_net_raw+ep ./v2tun
+```
+
+生成 `v2tun` 和 `libcronet.so`，两者需放在同一目录。测试与翻译说明见 [英文 README](../README.md)。
 
 ## 反馈
 

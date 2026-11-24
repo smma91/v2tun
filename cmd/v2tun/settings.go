@@ -59,11 +59,11 @@ func defaultSettings() Settings {
 }
 
 func dataDir() string {
-	d := filepath.Join(os.Getenv("ProgramData"), "v2tun")
+	d := baseDataDir()
 	if t := os.Getenv("V2TUN_DATADIR"); t != "" { // tests: never touch the real app's state
 		d = t
 	}
-	os.MkdirAll(d, 0o755)
+	os.MkdirAll(d, 0o700)
 	return d
 }
 

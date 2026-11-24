@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -40,8 +40,9 @@ func validate(t *testing.T, s *Server) {
 }
 
 func TestNewFormats(t *testing.T) {
-	if err := ensureCronet(); err != nil {
-		t.Fatal(err)
+	noCronet := ensureCronet() != nil
+	if noCronet && platform == "windows" {
+		t.Fatal("libcronet.dll missing")
 	}
 	for _, l := range []string{
 		"naive+https://user:pass@naive.example.com:443#naive",
@@ -52,6 +53,9 @@ func TestNewFormats(t *testing.T) {
 		s := newServer(l, "")
 		if s.Error != "" {
 			t.Errorf("%s: %s", l, s.Error)
+			continue
+		}
+		if noCronet && s.Type == "naive" { // Linux: libcronet.so is shipped next to the program, not the test
 			continue
 		}
 		validate(t, s)

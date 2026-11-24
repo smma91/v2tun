@@ -94,10 +94,20 @@
   "zh": "高级设置",
   "ar": "إعدادات متقدمة"
  },
+ "After you log in, v2tun starts in the tray (no password prompt)": {
+  "fa": "بعد از ورود به سیستم، v2tun کنار ساعت اجرا می‌شود (بدون پرسیدن رمز)",
+  "zh": "登录后 v2tun 在托盘中启动（无需输入密码）",
+  "ar": "بعد تسجيل الدخول يبدأ v2tun بجانب الساعة (دون طلب كلمة المرور)"
+ },
  "After you sign in to Windows, v2tun starts in the tray (no administrator prompt)": {
   "fa": "بعد از ورود به ویندوز، v2tun کنار ساعت اجرا می‌شود (بدون پیغام Administrator)",
   "zh": "登录 Windows 后，v2tun 在托盘中启动（无管理员提示）",
   "ar": "بعد تسجيل الدخول إلى Windows يعمل v2tun في شريط النظام (دون مطالبة المسؤول)"
+ },
+ "All apps": {
+  "fa": "همه‌ی برنامه‌ها",
+  "zh": "所有应用",
+  "ar": "كل التطبيقات"
  },
  "All traffic goes through {0}": {
   "fa": "همه‌ی ترافیک از {0} می‌گذرد",
@@ -228,6 +238,11 @@
   "fa": "انتخاب فایل ‎.ovpn",
   "zh": "选择 .ovpn 文件",
   "ar": "اختيار ملف ‎.ovpn"
+ },
+ "Choose a program": {
+  "fa": "انتخاب برنامه",
+  "zh": "选择程序",
+  "ar": "اختر برنامجًا"
  },
  "Choose an .exe file": {
   "fa": "انتخاب فایل exe",
@@ -399,6 +414,11 @@
   "zh": "文件…",
   "ar": "ملف…"
  },
+ "Grant permission": {
+  "fa": "دادن اجازه",
+  "zh": "授予权限",
+  "ar": "منح الإذن"
+ },
  "Group (optional)": {
   "fa": "گروه (اختیاری)",
   "zh": "组（可选）",
@@ -428,6 +448,11 @@
   "fa": "کیل‌سوئیچ",
   "zh": "断网保护",
   "ar": "مفتاح الإيقاف"
+ },
+ "Kill switch enabled": {
+  "fa": "کیل‌سوئیچ فعال شد",
+  "zh": "断网保护已启用",
+  "ar": "تم تفعيل مفتاح الإيقاف"
  },
  "Kill switch enabled (%d allowed apps)": {
   "fa": "کیل‌سوئیچ فعال شد (%d برنامه‌ی مجاز)",
@@ -544,6 +569,11 @@
   "zh": "网络已变更：%s",
   "ar": "تغيرت الشبكة: %s"
  },
+ "Network permission granted; restarting v2tun": {
+  "fa": "اجازه‌ی شبکه داده شد؛ v2tun دوباره اجرا می‌شود",
+  "zh": "已授予网络权限，正在重启 v2tun",
+  "ar": "تم منح إذن الشبكة؛ تتم إعادة تشغيل v2tun"
+ },
  "No connection with internet access found": {
   "fa": "هیچ کانکشن متصل به اینترنت پیدا نشد",
   "zh": "未找到可上网的网络连接",
@@ -639,6 +669,11 @@
   "zh": "密码",
   "ar": "كلمة المرور"
  },
+ "Permission: %v": {
+  "fa": "اجازه: %v",
+  "zh": "权限：%v",
+  "ar": "الإذن: %v"
+ },
  "Pick from running apps…": {
   "fa": "انتخاب از برنامه‌های در حال اجرا…",
   "zh": "从正在运行的应用中选择…",
@@ -648,6 +683,11 @@
   "fa": "پینگ",
   "zh": "延迟",
   "ar": "Ping"
+ },
+ "pkexec was not found. Run in a terminal: sudo setcap cap_net_admin,cap_net_raw+ep %s": {
+  "fa": "pkexec پیدا نشد. در ترمینال اجرا کنید: sudo setcap cap_net_admin,cap_net_raw+ep %s",
+  "zh": "未找到 pkexec。请在终端中运行：sudo setcap cap_net_admin,cap_net_raw+ep %s",
+  "ar": "لم يُعثر على pkexec. نفّذ في الطرفية: sudo setcap cap_net_admin,cap_net_raw+ep %s"
  },
  "Please wait": {
   "fa": "صبر کنید",
@@ -668,6 +708,11 @@
   "fa": "پورت %d در حال استفاده است؛ در تنظیمات پورت دیگری انتخاب کنید",
   "zh": "端口 %d 已被占用；请在设置中选择其他端口",
   "ar": "المنفذ %d قيد الاستخدام؛ اختر منفذًا آخر في الإعدادات"
+ },
+ "Programs": {
+  "fa": "برنامه‌ها",
+  "zh": "程序",
+  "ar": "البرامج"
  },
  "Protocol %s is not supported": {
   "fa": "پروتکل %s پشتیبانی نمی‌شود",
@@ -779,10 +824,20 @@
   "zh": "本应用中的服务器",
   "ar": "خوادم هذا التطبيق"
  },
+ "Set system proxy": {
+  "fa": "تنظیم پراکسی سیستم",
+  "zh": "设置系统代理",
+  "ar": "ضبط وكيل النظام"
+ },
  "Set Windows proxy": {
   "fa": "تنظیم پراکسی ویندوز",
   "zh": "设置 Windows 代理",
   "ar": "ضبط وكيل Windows"
+ },
+ "Sets the system time zone to the server's country": {
+  "fa": "منطقه‌ی زمانی سیستم با کشور سرور یکی می‌شود",
+  "zh": "将系统时区设置为服务器所在国家",
+  "ar": "يضبط المنطقة الزمنية للنظام على بلد الخادم"
  },
  "Sets the Windows time zone to the server's country": {
   "fa": "منطقه‌ی زمانی ویندوز با کشور سرور یکی می‌شود",
@@ -829,6 +884,21 @@
   "zh": "分流规则已更新（应用：%d，域名：%d）",
   "ar": "تم تحديث قواعد التقسيم (التطبيقات: %d، النطاقات: %d)"
  },
+ "Start at login": {
+  "fa": "اجرا هنگام ورود",
+  "zh": "登录时启动",
+  "ar": "التشغيل عند تسجيل الدخول"
+ },
+ "Start at login turned off": {
+  "fa": "اجرا هنگام ورود خاموش شد",
+  "zh": "已关闭登录时启动",
+  "ar": "تم إيقاف التشغيل عند تسجيل الدخول"
+ },
+ "Start at login: %v": {
+  "fa": "اجرا هنگام ورود: %v",
+  "zh": "登录时启动：%v",
+  "ar": "التشغيل عند تسجيل الدخول: %v"
+ },
  "Start with Windows": {
   "fa": "اجرا با ویندوز",
   "zh": "开机启动",
@@ -853,6 +923,11 @@
   "fa": "آدرس Subscription",
   "zh": "订阅地址",
   "ar": "رابط الاشتراك"
+ },
+ "System proxy: %v": {
+  "fa": "پراکسی سیستم: %v",
+  "zh": "系统代理：%v",
+  "ar": "وكيل النظام: %v"
  },
  "System-wide tunnel": {
   "fa": "تونل سراسری",
@@ -933,6 +1008,11 @@
   "fa": "آدرس Subscription باید با http:// یا https:// شروع شود",
   "zh": "订阅地址必须以 http:// 或 https:// 开头",
   "ar": "يجب أن يبدأ رابط الاشتراك بـ http://‎ أو https://‎"
+ },
+ "The TUN device (/dev/net/tun) is not available on this system": {
+  "fa": "دستگاه TUN ‏(/dev/net/tun) روی این سیستم در دسترس نیست",
+  "zh": "此系统上没有 TUN 设备（/dev/net/tun）",
+  "ar": "جهاز TUN ‏(/dev/net/tun) غير متاح على هذا النظام"
  },
  "The tunnel address is not ready yet; continuing": {
   "fa": "آدرس تونل هنوز آماده نیست؛ ادامه می‌دهیم",
@@ -1043,6 +1123,21 @@
   "fa": "v2tun — قطع",
   "zh": "v2tun — 离线",
   "ar": "v2tun — غير متصل"
+ },
+ "v2tun needs network permission. Press \"Grant permission\" (or run: sudo setcap cap_net_admin,cap_net_raw+ep %s)": {
+  "fa": "v2tun به اجازه‌ی شبکه نیاز دارد. «دادن اجازه» را بزنید (یا اجرا کنید: sudo setcap cap_net_admin,cap_net_raw+ep %s)",
+  "zh": "v2tun 需要网络权限。请点击“授予权限”（或运行：sudo setcap cap_net_admin,cap_net_raw+ep %s）",
+  "ar": "يحتاج v2tun إلى إذن الشبكة. اضغط «منح الإذن» (أو نفّذ: sudo setcap cap_net_admin,cap_net_raw+ep %s)"
+ },
+ "v2tun needs permission to create the tunnel. It is asked only once.": {
+  "fa": "v2tun برای ساختن تونل به اجازه نیاز دارد. این اجازه فقط یک بار پرسیده می‌شود.",
+  "zh": "v2tun 需要权限来创建隧道，只需授权一次。",
+  "ar": "يحتاج v2tun إلى إذن لإنشاء النفق. يُطلب مرة واحدة فقط."
+ },
+ "v2tun will start when you log in": {
+  "fa": "v2tun هنگام ورود به سیستم اجرا می‌شود",
+  "zh": "v2tun 将在登录时启动",
+  "ar": "سيبدأ v2tun عند تسجيل الدخول"
  },
  "v2tun will start when you sign in to Windows": {
   "fa": "v2tun با ورود به ویندوز اجرا می‌شود",

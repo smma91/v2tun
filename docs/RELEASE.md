@@ -18,9 +18,9 @@ Set it at build time: `.\build.ps1 -Version 1.0.0` (default in `cmd/v2tun/app.go
 
 Easiest: push a tag. `git tag v1.0.0; git push origin v1.0.0` makes the
 GitHub Actions workflow (`.github/workflows/build.yml`) run the unit tests,
-build the exe with that version and create a **draft** release with
-`v2tun-1.0.0-windows-amd64.zip` (exe, LICENSE, notices, README) and
-`SHA256SUMS.txt`. Sign the exe (step 3) before publishing the draft if you
+build both platforms with that version and create a **draft** release with
+`v2tun-1.0.0-windows-amd64.zip` (exe, LICENSE, notices, README), the Linux
+`.deb`, `.rpm`, `.AppImage` and `.tar.gz`, and `SHA256SUMS.txt`. Sign the exe (step 3) before publishing the draft if you
 have a certificate.
 
 ## 3. Code signing (required to avoid antivirus / SmartScreen blocks)
@@ -39,6 +39,6 @@ an earlier build as `Trojan:Win32/Bearfoos.A!ml`).
 
 ## 4. Checklist
 
-- [ ] `TESTING.md` completed on Windows 10 and 11.
+- [ ] `TESTING.md` completed on Windows 10 and 11 and on Linux (section 8).
 - [ ] `go vet` clean, unit tests pass.
 - [ ] Version set, signed, notices regenerated, source tagged.

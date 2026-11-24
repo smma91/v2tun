@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -49,7 +49,7 @@ func TestXrayXHTTP(t *testing.T) {
 		t.Fatalf("server: %+v", s)
 	}
 	up, _ := findUplink(nil)
-	if _, err := xrays.ensure(s.ID, s.Link, up.Name); err != nil {
+	if _, err := xrays.ensure(s.ID, s.Link, up); err != nil {
 		t.Fatalf("xray: %v", err)
 	}
 	raw, present, err := coreConfig(12345, up, []*Server{s}, "")

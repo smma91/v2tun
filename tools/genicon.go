@@ -1,6 +1,7 @@
 //go:build ignore
 
-// genicon draws the app icon (a shield) and writes app.ico.
+// genicon draws the app icon (a shield): the Windows .ico files, the tray icons
+// for Linux (PNG) and the icon used by the UI and the Linux packages.
 package main
 
 import (
@@ -85,8 +86,12 @@ func draw(size int) []byte {
 
 func main() {
 	writeICO("build/windows/app.ico", blue, []int{16, 24, 32, 48, 64, 256})
-	writeICO("tray_on.ico", green, []int{16, 20, 24, 32, 48})
-	writeICO("tray_off.ico", gray, []int{16, 20, 24, 32, 48})
+	writeICO("cmd/v2tun/assets/tray_on.ico", green, []int{16, 20, 24, 32, 48})
+	writeICO("cmd/v2tun/assets/tray_off.ico", gray, []int{16, 20, 24, 32, 48})
+	cur = green
+	os.WriteFile("cmd/v2tun/assets/tray_on.png", draw(64), 0o644)
+	cur = gray
+	os.WriteFile("cmd/v2tun/assets/tray_off.png", draw(64), 0o644)
 	cur = blue
 	png.Encode(must(os.Create("cmd/v2tun/frontend/icon.png")), decode(draw(256)))
 }

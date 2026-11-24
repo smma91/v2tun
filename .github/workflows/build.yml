@@ -9,8 +9,12 @@ on:
 permissions:
   contents: write
 
+env:
+  TAGS: desktop,production,with_quic,with_utls,with_wireguard,with_gvisor,with_naive_outbound,with_purego,with_openvpn,with_openconnect
+  UNIT_TESTS: TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP|TestProcIP
+
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -25,11 +29,10 @@ jobs:
         env:
           GOTOOLCHAIN: go1.26.11
         run: |
-          $tags = 'desktop,production,with_quic,with_utls,with_wireguard,with_gvisor,with_naive_outbound,with_purego,with_openvpn,with_openconnect'
-          go vet -tags $tags ./cmd/v2tun
+          go vet -tags $env:TAGS ./cmd/v2tun
           # the resource file clashes with the test binary's own manifest
           Rename-Item cmd/v2tun/rsrc_windows_amd64.syso rsrc.syso.bak
-          go test -tags $tags -count=1 -run 'TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP' ./cmd/v2tun
+          go test -tags $env:TAGS -count=1 -run $env:UNIT_TESTS ./cmd/v2tun
           $code = $LASTEXITCODE
           Rename-Item cmd/v2tun/rsrc.syso.bak rsrc_windows_amd64.syso
           exit $code
@@ -42,22 +45,74 @@ jobs:
           New-Item -ItemType Directory dist | Out-Null
           Copy-Item v2tun.exe, LICENSE, THIRD_PARTY_NOTICES.md, README.md dist/
           Compress-Archive dist/* "v2tun-$version-windows-amd64.zip"
-          (Get-FileHash v2tun.exe -Algorithm SHA256).Hash + '  v2tun.exe' | Out-File -Encoding ascii SHA256SUMS.txt
-          (Get-FileHash "v2tun-$version-windows-amd64.zip" -Algorithm SHA256).Hash + "  v2tun-$version-windows-amd64.zip" | Out-File -Encoding ascii -Append SHA256SUMS.txt
+          (Get-FileHash "v2tun-$version-windows-amd64.zip" -Algorithm SHA256).Hash.ToLower() + "  v2tun-$version-windows-amd64.zip" | Out-File -Encoding ascii SHA256SUMS-windows.txt
 
       - uses: actions/upload-artifact@v5
         with:
-          name: v2tun-windows-amd64
+          name: windows
           path: |
             v2tun-*.zip
-            SHA256SUMS.txt
+            SHA256SUMS-windows.txt
 
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+  linux:
+    # The oldest supported base: binaries built here run on Ubuntu 22.04+,
+    # Debian 12+, Fedora 37+ and other distributions with WebKitGTK 4.1.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.0
+          sudo curl -sSLo /usr/local/bin/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+
+      - name: Vet and unit tests
+        env:
+          GOTOOLCHAIN: go1.26.11
+        run: |
+          go vet -tags "$TAGS,webkit2_41" ./cmd/v2tun
+          go test -tags "$TAGS,webkit2_41" -count=1 -run "$UNIT_TESTS" ./cmd/v2tun
+
+      - name: Packages
+        env:
+          GOTOOLCHAIN: go1.26.11
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then version="${GITHUB_REF_NAME#v}"; else version="0.0.0~dev.${GITHUB_SHA::7}"; fi
+          build/linux/package.sh "$version"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: linux
+          path: dist/*
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd out
+          cat SHA256SUMS-*.txt | sed 's| \./| |' > SHA256SUMS.txt
+          rm SHA256SUMS-*.txt
+          cat SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
-          files: |
-            v2tun-*.zip
-            SHA256SUMS.txt
+          files: out/*

@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -44,8 +44,10 @@ func needsXray(link string) bool {
 	return t == "xhttp" || t == "splithttp"
 }
 
-// xrayOutbound converts a VLESS XHTTP link to an Xray outbound.
-func xrayOutbound(link, iface string) (map[string]any, error) {
+// xrayOutbound converts a VLESS XHTTP link to an Xray outbound. The server
+// name is resolved here, on the real network: inside the tunnel names resolve
+// to FakeIP addresses, which only mean something to the tunnel itself.
+func xrayOutbound(link string, up uplink) (map[string]any, error) {
 	u, err := url.Parse(link)
 	if err != nil {
 		return nil, err
@@ -72,8 +74,18 @@ func xrayOutbound(link, iface string) (map[string]any, error) {
 			xh["extra"] = e
 		}
 	}
-	stream := map[string]any{"network": "xhttp", "xhttpSettings": xh,
-		"sockopt": map[string]any{"interface": iface}}
+	sockopt := map[string]any{"interface": up.Name}
+	if directMark != 0 {
+		sockopt["mark"] = directMark
+	}
+	addr := u.Hostname()
+	if ips, err := resolveDirect(up, addr); err == nil && len(ips) > 0 && ips[0].String() != addr {
+		addr = ips[0].String()
+		if xh["host"] == nil {
+			xh["host"] = u.Hostname() // keep the HTTP Host header
+		}
+	}
+	stream := map[string]any{"network": "xhttp", "xhttpSettings": xh, "sockopt": sockopt}
 	sec := strings.ToLower(q.Get("security"))
 	switch sec {
 	case "tls":
@@ -90,16 +102,16 @@ func xrayOutbound(link, iface string) (map[string]any, error) {
 	}
 	return map[string]any{
 		"protocol":       "vless",
-		"settings":       map[string]any{"vnext": []any{map[string]any{"address": u.Hostname(), "port": port, "users": []any{user}}}},
+		"settings":       map[string]any{"vnext": []any{map[string]any{"address": addr, "port": port, "users": []any{user}}}},
 		"streamSettings": stream,
 	}, nil
 }
 
 // ensure starts (or reuses) the Xray instance for a server; returns its port.
-func (p *xrayPool) ensure(id, link, iface string) (int, error) {
+func (p *xrayPool) ensure(id, link string, up uplink) (int, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	key := link + "|" + iface
+	key := link + "|" + up.Name
 	if x := p.insts[id]; x != nil {
 		if x.key == key {
 			return x.port, nil
@@ -107,7 +119,7 @@ func (p *xrayPool) ensure(id, link, iface string) (int, error) {
 		x.inst.Close()
 		delete(p.insts, id)
 	}
-	ob, err := xrayOutbound(link, iface)
+	ob, err := xrayOutbound(link, up)
 	if err != nil {
 		return 0, err
 	}

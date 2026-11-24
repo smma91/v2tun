@@ -1,15 +1,13 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/netip"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -102,8 +100,8 @@ func (e *Engine) Start(s Settings) (err error) {
 		}
 		return trErr("The SOCKS proxy at %s is not available. Start v2rayN and connect to a server", s.SocksAddr)
 	}
-	if err := ensureWintun(); err != nil {
-		return fmt.Errorf("wintun.dll: %w", err)
+	if err := prepareTun(); err != nil {
+		return err
 	}
 
 	var cleanup []func()
@@ -116,7 +114,7 @@ func (e *Engine) Start(s Settings) (err error) {
 	}()
 
 	// v2rayN mode: everything is found from the running v2rayN, nothing to configure.
-	if p := processPathByName("v2rayN.exe"); !builtin && p != "" {
+	if p := processPathByName(v2rayNExe); !builtin && p != "" {
 		s.V2rayNDir = filepath.Dir(p)
 		e.logf("info", "v2rayN running: %s", s.V2rayNDir)
 	}
@@ -138,10 +136,11 @@ func (e *Engine) Start(s Settings) (err error) {
 		return err
 	}
 	cleanup = append(cleanup, dev.Close)
-	idx, err := e.configureTun(dev.LUID(), s.DNS)
+	idx, err := e.configureTun(dev, s.DNS)
 	if err != nil {
 		return err
 	}
+	cleanup = append(cleanup, func() { e.unconfigureTun() })
 
 	socks, err := socks5.New(s.SocksAddr, "", "")
 	if err != nil {
@@ -177,7 +176,7 @@ func (e *Engine) Start(s Settings) (err error) {
 			apps = append(apps, exe)
 		}
 		if s.V2rayNDir != "" {
-			apps = append(apps, filepath.Join(s.V2rayNDir, "v2rayN.exe"))
+			apps = append(apps, filepath.Join(s.V2rayNDir, v2rayNExe))
 		}
 		ks, err := enableKillSwitch(dev.LUID(), apps, s.AllowLAN, s.KillSwitch)
 		if err != nil {
@@ -185,19 +184,19 @@ func (e *Engine) Start(s Settings) (err error) {
 		}
 		e.ks = ks
 		cleanup = append(cleanup, func() { ks.Close(); e.ks = nil })
-		if s.KillSwitch {
+		if s.KillSwitch && platform == "linux" {
+			e.logf("info", "Kill switch enabled")
+		} else if s.KillSwitch {
 			e.logf("info", "Kill switch enabled (%d allowed apps)", len(apps))
 		} else {
 			e.logf("info", "Kill switch is off; IPv6 and DNS leak protection enabled")
 		}
 	}
 
-	for _, pfx := range []string{"0.0.0.0/1", "128.0.0.0/1"} {
-		if err := run("netsh", "interface", "ipv4", "add", "route", pfx, strconv.Itoa(int(idx)), "0.0.0.0", "metric=1", "store=active"); err != nil {
-			return fmt.Errorf("route: %w", err)
-		}
+	if err := addTunRoutes(idx); err != nil {
+		return fmt.Errorf("route: %w", err)
 	}
-	run("ipconfig", "/flushdns")
+	flushDNSCache()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	e.cancel = cancel
@@ -217,47 +216,6 @@ func (e *Engine) Start(s Settings) (err error) {
 	saveState(st)
 	e.logf("info", "System-wide tunnel up → %s", s.SocksAddr)
 	return nil
-}
-
-func (e *Engine) configureTun(luid uint64, dns []string) (uint32, error) {
-	var idx uint32
-	for i := 0; i < 50 && idx == 0; i++ {
-		as, _ := listAdapters()
-		for _, a := range as {
-			if a.LUID == luid {
-				idx = a.Index
-			}
-		}
-		if idx == 0 {
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-	if idx == 0 {
-		return 0, errors.New("tunnel adapter did not appear")
-	}
-	i := strconv.Itoa(int(idx))
-	// No duplicate-address detection on a point-to-point tunnel: otherwise the
-	// address stays "tentative" for seconds, Windows answers "host unreachable"
-	// and caches the failed DNS lookups made meanwhile.
-	run("netsh", "interface", "ipv4", "set", "interface", i, "dadtransmits=0", "metric=1")
-	if err := run("netsh", "interface", "ipv4", "set", "address", "name="+i, "source=static", "address="+tunAddr, "mask="+tunMask); err != nil {
-		return 0, err
-	}
-	if !waitAddrReady(luid, 8*time.Second) {
-		e.logf("warn", "The tunnel address is not ready yet; continuing")
-	}
-	for n, d := range dns {
-		if _, err := netip.ParseAddr(d); err != nil {
-			continue
-		}
-		if n == 0 {
-			run("netsh", "interface", "ipv4", "set", "dnsservers", "name="+i, "source=static", "address="+d, "register=none", "validate=no")
-		} else {
-			run("netsh", "interface", "ipv4", "add", "dnsservers", "name="+i, "address="+d, "index="+strconv.Itoa(n+1), "validate=no")
-		}
-	}
-	// IPv6 is not tunnelled: the kill switch blocks it so it cannot leak.
-	return idx, nil
 }
 
 // pinServers resolves the proxy servers outside the tunnel and pins them in
@@ -361,7 +319,8 @@ func (e *Engine) Stop() {
 		e.tz = nil
 	}
 	unpinHosts()
-	run("ipconfig", "/flushdns")
+	e.unconfigureTun()
+	flushDNSCache()
 	// Removed last, so nothing can leak while the tunnel is torn down.
 	e.ks.Close()
 	e.ks = nil

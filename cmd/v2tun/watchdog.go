@@ -1,16 +1,12 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
 import (
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
-	"syscall"
-
-	"golang.org/x/sys/windows"
 )
 
 // runState records what a connected tunnel changed on the system, so it can
@@ -46,59 +42,24 @@ func loadState() (runState, bool) {
 	return s, true
 }
 
-func processAlive(pid int) bool {
-	h, err := windows.OpenProcess(windows.SYNCHRONIZE, false, uint32(pid))
-	if err != nil {
-		return false
-	}
-	defer windows.CloseHandle(h)
-	ev, _ := windows.WaitForSingleObject(h, 0)
-	return ev == uint32(windows.WAIT_TIMEOUT)
-}
-
 // cleanupStale restores the system after a tunnel that did not shut down
 // cleanly. Returns true if something had to be repaired.
 func cleanupStale() bool {
 	unpinHosts() // harmless when nothing is pinned
+	cleanupNetwork()
 	s, ok := loadState()
 	if !ok || (s.PID != os.Getpid() && processAlive(s.PID)) {
 		return false
 	}
 	if s.OrigTZ != "" {
-		tzutil("/s", s.OrigTZ)
+		setTZ(s.OrigTZ)
 	}
 	if s.Proxy != nil { // otherwise every browser would point at a dead proxy
 		restoreSystemProxy(*s.Proxy)
 	}
-	run("ipconfig", "/flushdns")
+	cleanupNetwork()
+	flushDNSCache()
 	clearState()
 	writeLogFile(LogLine{Level: "warn", Msg: "network restored after an unclean exit (pid " + strconv.Itoa(s.PID) + ")"})
 	return true
-}
-
-// startWatchdog launches a tiny hidden copy of v2tun that waits for this
-// process to end and, if it ended without disconnecting, restores the system.
-func startWatchdog() {
-	exe, err := os.Executable()
-	if err != nil {
-		return
-	}
-	cmd := exec.Command(exe, "--watchdog", strconv.Itoa(os.Getpid()))
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true,
-		CreationFlags: 0x08000000 | 0x00000200} // CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
-	cmd.Start()
-}
-
-// watchdogMain is the entry point of the watchdog process.
-func watchdogMain(parent int) {
-	h, err := windows.OpenProcess(windows.SYNCHRONIZE, false, uint32(parent))
-	if err != nil {
-		cleanupStale()
-		return
-	}
-	windows.WaitForSingleObject(h, windows.INFINITE)
-	windows.CloseHandle(h)
-	if s, ok := loadState(); ok && s.PID == parent {
-		cleanupStale()
-	}
 }

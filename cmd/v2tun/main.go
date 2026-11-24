@@ -1,6 +1,6 @@
-//go:build windows
+//go:build windows || linux
 
-// v2tun: system-wide tunnel for v2rayN's SOCKS proxy, with a kill switch.
+// v2tun: system-wide tunnel with a kill switch (Windows and Linux).
 package main
 
 import (
@@ -14,6 +14,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	"github.com/xjasonlyu/tun2socks/v2/log"
 	"go.uber.org/zap"
@@ -59,9 +60,16 @@ func main() {
 			OnSecondInstanceLaunch: func(options.SecondInstanceData) { app.showWindow() },
 		},
 		Windows: &windows.Options{Theme: windows.Dark},
+		Linux:   &linux.Options{ProgramName: "v2tun", Icon: appIcon(), WebviewGpuPolicy: linux.WebviewGpuPolicyOnDemand},
 	})
 	systray.Quit()
 	if err != nil {
 		writeLogFile(LogLine{Time: "", Level: "error", Msg: "wails: " + err.Error()})
 	}
+}
+
+// appIcon is the window / taskbar icon on Linux.
+func appIcon() []byte {
+	b, _ := assets.ReadFile("frontend/icon.png")
+	return b
 }

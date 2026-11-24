@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -86,6 +86,7 @@ func (a *App) startup(ctx context.Context) {
 		a.logf("warn", "The previous run was closed without disconnecting; network settings were restored")
 	}
 	startWatchdog()
+	handleSignals(a)
 	for _, p := range []string{settingsPath(), storePath(), backupPath(), statePath()} {
 		if _, err := os.Stat(p); err == nil {
 			protectFile(p) // files from older versions were readable by every user
@@ -143,7 +144,7 @@ func (a *App) beforeClose(ctx context.Context) bool {
 		a.stopProxyMode()
 		return false
 	}
-	runtime.WindowHide(ctx)
+	a.hideWindow()
 	return true
 }
 
@@ -155,16 +156,16 @@ func (a *App) GetAutostart() bool {
 
 func (a *App) SetAutostart(on bool) error {
 	if err := setAutostart(on); err != nil {
-		a.logf("error", "Start with Windows: %v", err)
+		a.logf("error", pick("Start with Windows: %v", "Start at login: %v"), err)
 		return err
 	}
 	a.mu.Lock()
 	a.autostart = on
 	a.mu.Unlock()
 	if on {
-		a.logf("info", "v2tun will start when you sign in to Windows")
+		a.logf("info", pick("v2tun will start when you sign in to Windows", "v2tun will start when you log in"))
 	} else {
-		a.logf("info", "Start with Windows turned off")
+		a.logf("info", pick("Start with Windows turned off", "Start at login turned off"))
 	}
 	return nil
 }
@@ -192,11 +193,28 @@ func (a *App) CloseWindow() {
 		go a.quit()
 		return
 	}
-	runtime.WindowHide(a.ctx)
+	a.hideWindow()
 }
 
 // Quit exits completely (tunnel stopped, tray icon removed).
 func (a *App) Quit() { go a.quit() }
+
+// Platform is "windows" or "linux": the UI adapts a few texts and hides what
+// the system does not support.
+func (a *App) Platform() string { return platform }
+
+// NeedsPermission: on Linux, v2tun does not have its network capabilities yet.
+func (a *App) NeedsPermission() bool { return !hasPrivileges() }
+
+// GrantPermission asks for the password once and gives v2tun its network
+// capabilities (Linux), then restarts it.
+func (a *App) GrantPermission() error {
+	if err := grantPermission(a); err != nil {
+		a.logf("error", "Permission: %v", err)
+		return err
+	}
+	return nil
+}
 
 func (a *App) shutdown(ctx context.Context) {
 	a.engine.Stop()
@@ -349,7 +367,7 @@ func (a *App) startProxyMode(s Settings) error {
 		saveState(st) // first, so a crash right now is still undone
 		if err := setSystemProxy(a.core.Addr()); err != nil {
 			clearState()
-			a.logf("error", "Windows proxy: %v", err)
+			a.logf("error", pick("Windows proxy: %v", "System proxy: %v"), err)
 			return err
 		}
 	}
@@ -481,7 +499,7 @@ func (a *App) RunningApps() []AppEntry {
 func (a *App) BrowseApp() string {
 	p, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:   T("Choose an app"),
-		Filters: []runtime.FileFilter{{DisplayName: "Programs (*.exe)", Pattern: "*.exe"}},
+		Filters: []runtime.FileFilter{{DisplayName: T("Programs"), Pattern: exeFilter}},
 	})
 	if err != nil {
 		return ""

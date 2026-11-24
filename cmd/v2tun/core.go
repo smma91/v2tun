@@ -1,4 +1,4 @@
-//go:build windows
+//go:build windows || linux
 
 package main
 
@@ -85,7 +85,7 @@ func coreConfig(port int, uplink uplink, servers []*Server, selected string) ([]
 		var ob map[string]any
 		if needsXray(s.Link) {
 			// VLESS XHTTP: a dedicated embedded Xray instance, reached over local SOCKS.
-			p, err := xrays.ensure(s.ID, s.Link, uplink.Name)
+			p, err := xrays.ensure(s.ID, s.Link, uplink)
 			if err != nil {
 				writeLogFile(LogLine{Level: "warn", Msg: "xray " + s.Name + ": " + err.Error()})
 				continue
@@ -148,6 +148,9 @@ func coreConfig(port int, uplink uplink, servers []*Server, selected string) ([]
 	}
 	if len(endpoints) > 0 {
 		cfg["endpoints"] = endpoints
+	}
+	if directMark != 0 { // Linux: the firewall lets marked traffic out
+		cfg["route"].(map[string]any)["default_mark"] = directMark
 	}
 	b, err := json.Marshal(cfg)
 	return b, present, err

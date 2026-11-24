@@ -4,7 +4,7 @@
 
 [English](../README.md) | [فارسی](README.fa.md) | **العربية** | [中文](README.zh.md)
 
-نفق شامل لنظام Windows مع مفتاح إيقاف (Kill Switch). يمرّر v2tun حركة جميع التطبيقات على الحاسوب عبر وكيل (Proxy)، إما بنواته المدمجة (الخوادم والاشتراكات داخل التطبيق) أو عبر منفذ SOCKS لبرنامج [v2rayN](https://github.com/2dust/v2rayN) أثناء تشغيله.
+نفق شامل مع مفتاح إيقاف (Kill Switch) لنظامَي **Windows وLinux**. يمرّر v2tun حركة جميع التطبيقات على الحاسوب عبر وكيل (Proxy)، إما بنواته المدمجة (الخوادم والاشتراكات داخل التطبيق) أو عبر منفذ SOCKS لبرنامج [v2rayN](https://github.com/2dust/v2rayN) أثناء تشغيله.
 
 <p align="center">
   <img src="screenshots/connect.png" width="260" alt="Connect">
@@ -36,13 +36,13 @@
 - أيقونة بجانب الساعة، تشغيل مع Windows (بدون نافذة UAC)، اتصال تلقائي.
 - واجهة بالإنجليزية والفارسية والعربية والصينية.
 
-## المتطلبات
+## متطلبات Windows
 
 - Windows 10 أو 11، ‏64 بت (x64).
 - صلاحيات المسؤول (Administrator) لمحول النفق والمسارات والجدار الناري.
 - [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) (موجود في Windows 11 وفي Windows 10 المحدَّث).
 
-## التثبيت
+## التثبيت على Windows
 
 1. نزّل `v2tun-<version>-windows-amd64.zip` من [Releases](https://github.com/smma91/v2tun/releases) وتحقق منه عبر `SHA256SUMS.txt`.
 2. فك الضغط في أي مجلد وشغّل `v2tun.exe` (يطلب صلاحيات المسؤول).
@@ -52,6 +52,25 @@
 تُحفظ الإعدادات والخوادم والسجل في `C:\ProgramData\v2tun` (للمسؤولين فقط).
 
 > **تحذير مكافح الفيروسات.** يغيّر v2tun الجدار الناري والمسارات وDNS وملف hosts ويحمّل برنامج تشغيل شبكة. قد تُصنَّف النسخ غير الموقّعة من هذه الأدوات خطأً كبرامج ضارة. يمكنك دائمًا بناء الملف التنفيذي بنفسك من هذا المصدر.
+
+## Linux
+
+**المتطلبات:** توزيعة 64 بت (x86_64) مع WebKitGTK 4.1، مثل Ubuntu 22.04 أو أحدث، Debian 12، Linux Mint 21 أو Fedora 37 أو أحدث.
+
+نزّل الملف المناسب من [Releases](https://github.com/smma91/v2tun/releases):
+
+| الحزمة | التثبيت |
+|---|---|
+| `.deb` (Ubuntu, Debian, Mint) | `sudo apt install ./v2tun_<version>_amd64.deb` |
+| `.rpm` (Fedora) | `sudo dnf install ./v2tun-<version>-1.x86_64.rpm` |
+| `.AppImage` | `chmod +x v2tun-*.AppImage` |
+| `.tar.gz` | `sudo ./install.sh` |
+
+ثم شغّل **v2tun** من قائمة التطبيقات.
+
+- لا يعمل v2tun بصلاحيات root؛ تفتح النافذة بمستخدمك، ويحصل البرنامج فقط على صلاحيتَي الشبكة اللازمتين (`cap_net_admin` و`cap_net_raw`). تمنحهما الحزم و`install.sh`؛ وإن لم تتوفرا (مثل AppImage) يظهر زر **منح الإذن** الذي يطلب كلمة المرور مرة واحدة، ويثبّت AppImage نفسه حينها في `/opt/v2tun`.
+- تحتاج أيقونة شريط النظام إلى سطح مكتب يدعمها (KDE وXfce وCinnamon وUbuntu؛ في GNOME العادي ثبّت إضافة AppIndicator). بدونها يُصغَّر الإطار عند إغلاقه.
+- تُحفظ الإعدادات والخوادم في `~/.config/v2tun`.
 
 ## البناء من المصدر
 
@@ -67,7 +86,21 @@ cd v2tun
 
 </div>
 
-الناتج ملف واحد `v2tun.exe` يتضمن `wintun.dll` و`libcronet.dll`. تفاصيل الاختبارات والترجمة في [README الإنجليزي](../README.md).
+الناتج ملف واحد `v2tun.exe` يتضمن `wintun.dll` و`libcronet.dll`.
+
+**Linux:**
+
+<div dir="ltr">
+
+```sh
+sudo apt install build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+./build.sh
+sudo setcap cap_net_admin,cap_net_raw+ep ./v2tun
+```
+
+</div>
+
+الناتج `v2tun` و`libcronet.so` ويجب أن يبقيا معًا. تفاصيل الاختبارات والترجمة في [README الإنجليزي](../README.md).
 
 ## الملاحظات والمشاكل
 

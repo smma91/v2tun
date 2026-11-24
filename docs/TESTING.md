@@ -1,7 +1,8 @@
 # Release test checklist
 
-Run every item on a real Windows machine and tick it off. If something fails,
-keep `C:\ProgramData\v2tun\v2tun.log`.
+Run every item on a real machine (Windows, and Linux for section 8) and tick
+it off. If something fails, keep the log: `C:\ProgramData\v2tun\v2tun.log` on
+Windows, `~/.config/v2tun/v2tun.log` on Linux.
 
 Leak test sites: https://browserleaks.com/ip, https://browserleaks.com/webrtc,
 https://dnsleaktest.com (Extended test).
@@ -12,6 +13,13 @@ required; they change the firewall and routes and restore them):
 ```powershell
 $env:V2TUN_E2E = '1'
 go test -tags "<tags from build.ps1>" -run TestE2E -v ./cmd/v2tun
+```
+
+On Linux (as root, or a test binary with the network capabilities):
+
+```sh
+sudo V2TUN_E2E=1 V2TUN_DATADIR=/path/with/servers.json V2TUN_E2E_EXE=/opt/v2tun/v2tun \
+  go test -tags "<tags from build.sh>" -run TestE2E -v ./cmd/v2tun
 ```
 
 ## 1. Basic connection
@@ -68,3 +76,18 @@ go test -tags "<tags from build.ps1>" -run TestE2E -v ./cmd/v2tun
 
 - [ ] Stays connected for 24 hours with normal use: memory in Task Manager does not keep growing.
 - [ ] No `panic in` line in the log.
+
+## 8. Linux
+
+- [ ] `.deb` on Ubuntu 22.04 and 24.04, `.rpm` on Fedora, AppImage and `tar.gz`
+      on one more distribution: installs, starts from the menu, `getcap`
+      shows `cap_net_admin,cap_net_raw=ep`.
+- [ ] AppImage without permission: "Grant permission" asks once, installs to
+      `/opt/v2tun` and restarts from there.
+- [ ] Sections 1, 2 and 3 above on Linux (end the process with `kill -9`:
+      `sudo nft list tables` shows no `v2tun` tables afterwards).
+- [ ] DNS leak test with systemd-resolved and with NetworkManager's dnsmasq.
+- [ ] Tray on KDE and on Ubuntu GNOME; plain GNOME without a tray: closing
+      the window minimises it.
+- [ ] "Proxy only" sets and restores the proxy on GNOME and KDE.
+- [ ] Logout while connected: the tunnel is disconnected cleanly.
