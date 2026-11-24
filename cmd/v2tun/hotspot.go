@@ -3,6 +3,8 @@
 package main
 
 import (
+	"net"
+	"net/netip"
 	"sync"
 	"time"
 )
@@ -40,7 +42,7 @@ func (h *hotspotManager) Start(s Settings, e *Engine, logf func(string, string, 
 	h.mu.Unlock()
 	go func() {
 		defer recoverPanic("hotspot")
-		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass)
+		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass, hotspotDNS(s))
 		if err == nil {
 			if err = e.routeHotspot(ap); err != nil {
 				ap.Close()
@@ -81,6 +83,17 @@ func (h *hotspotManager) Start(s Settings, e *Engine, logf func(string, string, 
 			h.mu.Unlock()
 		}
 	}()
+}
+
+// hotspotDNS: the first configured DNS server (queries to it are routed into
+// the tunnel), as host:port.
+func hotspotDNS(s Settings) string {
+	for _, d := range s.DNS {
+		if a, err := netip.ParseAddr(d); err == nil && a.Is4() {
+			return net.JoinHostPort(d, "53")
+		}
+	}
+	return "1.1.1.1:53"
 }
 
 func (h *hotspotManager) Stop(e *Engine) {

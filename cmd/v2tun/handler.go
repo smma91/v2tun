@@ -31,16 +31,33 @@ type handler struct {
 	rules atomic.Pointer[rules]
 	logf  func(level, format string, args ...any)
 
-	dnsTCP    *dnsTCP
-	fake      *fakeIP // nil: real DNS through the tunnel instead of remote DNS
-	blockQUIC atomic.Bool
-	open      sync.Map // flows currently in the tunnel
+	dnsTCP *dnsTCP
+	fake   *fakeIP // nil: real DNS through the tunnel instead of remote DNS
+
+	hotspot     atomic.Pointer[netip.Prefix] // address range of hotspot devices
+	hotspotSeen sync.Map                     // device address -> logged
+	blockQUIC   atomic.Bool
+	open        sync.Map // flows currently in the tunnel
 
 	errMu   sync.Mutex
 	errSeen map[string]time.Time
 }
 
 // dialFailed logs a failed outgoing connection (at most once a minute per target).
+// watchHotspot: connections from this range come from hotspot devices.
+func (h *handler) watchHotspot(p netip.Prefix) {
+	h.hotspot.Store(&p)
+	h.hotspotSeen.Clear()
+}
+
+func (h *handler) noteHotspot(src netip.Addr) {
+	if p := h.hotspot.Load(); p != nil && p.Contains(src) {
+		if _, seen := h.hotspotSeen.LoadOrStore(src, true); !seen && h.logf != nil {
+			h.logf("info", "Hotspot device %s is using the tunnel", src)
+		}
+	}
+}
+
 func (h *handler) dialFailed(kind string, m *M.Metadata, direct bool, err error) {
 	if h.logf == nil {
 		return
@@ -141,6 +158,7 @@ func (h *handler) tcp(origin adapter.TCPConn) {
 		DstIP: addr(id.LocalAddress.AsSlice()), DstPort: id.LocalPort}
 	r := h.rules.Load()
 
+	h.noteHotspot(m.SrcIP)
 	path := ownerPath(func() uint32 { return tcpOwner(m.SrcIP, m.SrcPort) })
 	core := isCorePath(path)
 	direct := core || r.appDirect(path)
@@ -226,6 +244,7 @@ func (h *handler) udp(origin adapter.UDPConn) {
 		DstIP: addr(id.LocalAddress.AsSlice()), DstPort: id.LocalPort}
 	r := h.rules.Load()
 
+	h.noteHotspot(m.SrcIP)
 	path := ownerPath(func() uint32 { return udpOwner(m.SrcPort) })
 	core := isCorePath(path)
 	direct := core || r.appDirect(path)

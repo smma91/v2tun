@@ -5,6 +5,7 @@ package main
 import (
 	"errors"
 	"net"
+	"net/netip"
 	"os/exec"
 	"strings"
 
@@ -38,7 +39,7 @@ func nmcli(args ...string) (string, error) {
 	return s, nil
 }
 
-func startAccessPoint(ssid, pass string) (*accessPoint, error) {
+func startAccessPoint(ssid, pass, dns string) (*accessPoint, error) {
 	if _, err := exec.LookPath("nmcli"); err != nil {
 		return nil, trErr("The hotspot needs NetworkManager (nmcli was not found)")
 	}
@@ -125,7 +126,18 @@ func (e *Engine) routeHotspot(ap *accessPoint) error {
 	add(join(iif(ap.ifname), oif(expr.CmpOpEq, tunName), accept)) // devices -> tunnel
 	add(join(iif(tunName), oif(expr.CmpOpEq, ap.ifname), accept)) // replies
 	add(join(iif(ap.ifname), reject))                             // anything else from the hotspot
-	return c.Flush()
+	if err := c.Flush(); err != nil {
+		return err
+	}
+	if a, err := netlink.LinkByName(ap.ifname); err == nil {
+		if as, _ := netlink.AddrList(a, netlink.FAMILY_V4); len(as) > 0 {
+			ones, _ := as[0].Mask.Size()
+			if ip, ok := netip.AddrFromSlice(as[0].IP.To4()); ok {
+				e.handler.watchHotspot(netip.PrefixFrom(ip, ones).Masked())
+			}
+		}
+	}
+	return nil
 }
 
 func (e *Engine) unrouteHotspot(ap *accessPoint) {

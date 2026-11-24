@@ -67,9 +67,10 @@ type accessPoint struct {
 	addr   netip.Addr
 	subnet netip.Prefix
 	dhcp   *dhcpServer // only when Windows itself does not hand out addresses
+	dns    *dnsRelay
 }
 
-func startAccessPoint(ssid, pass string) (*accessPoint, error) {
+func startAccessPoint(ssid, pass, dns string) (*accessPoint, error) {
 	if len(pass) < 8 || len(pass) > 63 {
 		return nil, trErr("The hotspot password must have 8 to 63 characters")
 	}
@@ -128,6 +129,10 @@ func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 	if err := ap.findAdapter(); err != nil {
 		ap.Close()
 		return nil, err
+	}
+	if ap.dns, err = startDNSRelay(ap.addr, dns); err != nil {
+		ap.Close()
+		return nil, fmt.Errorf("DNS: %w", err)
 	}
 	return ap, nil
 }
@@ -206,7 +211,7 @@ func (ap *accessPoint) Clients() int {
 		}
 		idx, typ := binary.LittleEndian.Uint32(row), binary.LittleEndian.Uint32(row[20:])
 		ip := netip.AddrFrom4([4]byte(row[16:20]))
-		if idx == ap.index && typ == 3 && ap.subnet.Contains(ip) && ip != ap.addr && ip.As4()[3] != 255 {
+		if idx == ap.index && (typ == 3 || typ == 4) && ap.subnet.Contains(ip) && ip != ap.addr && ip.As4()[3] != 255 {
 			count++
 		}
 	}
@@ -218,6 +223,9 @@ var procGetIpNetTable = iphlpapi.NewProc("GetIpNetTable")
 func (ap *accessPoint) Close() {
 	if ap.dhcp != nil {
 		ap.dhcp.Close()
+	}
+	if ap.dns != nil {
+		ap.dns.Close()
 	}
 	ap.stdin.Close() // the helper stops the access point and exits
 	go func() {
@@ -247,6 +255,7 @@ func (e *Engine) routeHotspot(ap *accessPoint) error {
 			return err
 		}
 	}
+	e.handler.watchHotspot(ap.subnet)
 	return nil
 }
 
