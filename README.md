@@ -1,5 +1,7 @@
 # v2tun
 
+**English** | [فارسی](README.fa.md) | [العربية](README.ar.md) | [中文](README.zh.md)
+
 A system-wide tunnel for Windows with a kill switch. v2tun sends the traffic of
 every app on the PC through a proxy, using either its own built-in core
 (servers and subscriptions inside the app) or the SOCKS port of a running
@@ -74,7 +76,7 @@ Requirements: Go 1.26 (the `go` command downloads the exact toolchain
 automatically) and PowerShell. No C compiler is needed.
 
 ```powershell
-git clone <this repository>
+git clone https://github.com/smma91/v2tun.git
 cd v2tun
 .\build.ps1                 # or: .\build.ps1 -Version 1.0.0
 ```
