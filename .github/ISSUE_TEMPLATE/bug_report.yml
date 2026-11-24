@@ -1,0 +1,49 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please **remove server addresses, passwords and subscription links** from anything you paste.
+  - type: input
+    id: version
+    attributes:
+      label: v2tun version
+      description: Shown at the bottom of the Settings tab.
+      placeholder: "0.9.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows version
+      options: [Windows 11, Windows 10, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Proxy source and mode
+      multiple: true
+      options: [Built-in core, v2rayN, System-wide tunnel, Proxy only]
+    validations:
+      required: true
+  - type: input
+    id: protocol
+    attributes:
+      label: Server protocol
+      placeholder: "e.g. VLESS Reality, Shadowsocks, Hysteria2"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Steps to reproduce help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The relevant part of `C:\ProgramData\v2tun\v2tun.log` (remove private data).
+      render: text

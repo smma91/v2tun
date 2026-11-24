@@ -123,6 +123,12 @@ See [RELEASE.md](RELEASE.md). Pushing a tag such as `v1.0.0` makes the GitHub
 Actions workflow build the exe and create a draft release with the zip and
 checksums.
 
+## Feedback
+
+Found a bug or have an idea? Please [open an issue](../../issues/new/choose).
+Remove server addresses, passwords and subscription links from logs before
+posting them. Pull requests are not accepted at the moment.
+
 ## License
 
 v2tun is licensed under the [GNU General Public License v3.0](LICENSE)
