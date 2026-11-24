@@ -12,7 +12,7 @@ import (
 func TestE2EHotspotAP(t *testing.T) {
 	e2e(t)
 	start := time.Now()
-	ap, err := startAccessPoint("v2tun-test", "v2tun-test-1234", "1.1.1.1:53", nil)
+	ap, err := startAccessPoint("v2tun-test", "v2tun-test-1234")
 	if err != nil {
 		t.Fatal(err)
 	}

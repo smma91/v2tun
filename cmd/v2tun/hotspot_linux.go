@@ -39,7 +39,7 @@ func nmcli(args ...string) (string, error) {
 	return s, nil
 }
 
-func startAccessPoint(ssid, pass, dns string, onDNS func(netip.Addr)) (*accessPoint, error) {
+func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 	if _, err := exec.LookPath("nmcli"); err != nil {
 		return nil, trErr("The hotspot needs NetworkManager (nmcli was not found)")
 	}
@@ -69,6 +69,10 @@ func startAccessPoint(ssid, pass, dns string, onDNS func(netip.Addr)) (*accessPo
 	}
 	return &accessPoint{ifname: dev}, nil
 }
+
+// startDNS: NetworkManager's dnsmasq answers the devices (its questions are
+// captured into the tunnel), nothing to start.
+func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr)) error { return nil }
 
 func (ap *accessPoint) Alive() bool {
 	out, _ := nmcli("-t", "-f", "NAME", "connection", "show", "--active")

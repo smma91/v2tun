@@ -48,9 +48,14 @@ func (h *hotspotManager) Start(s Settings, e *Engine, logf func(string, string, 
 				logf("info", "Hotspot device %s asks DNS through v2tun", dev)
 			}
 		}
-		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass, hotspotDNS(s), onDNS)
+		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass)
 		if err == nil {
-			if err = e.routeHotspot(ap); err != nil {
+			if err = e.routeHotspot(ap); err == nil {
+				if err = ap.startDNS(hotspotDNS(s), onDNS); err != nil {
+					e.unrouteHotspot(ap)
+				}
+			}
+			if err != nil {
 				ap.Close()
 			}
 		}

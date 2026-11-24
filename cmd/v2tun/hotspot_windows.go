@@ -63,6 +63,8 @@ type accessPoint struct {
 	stdin  io.WriteCloser
 	done   atomic.Bool
 	index  uint32 // the Wi-Fi Direct virtual adapter
+	name   string // its connection name (for connection sharing)
+	ics    bool   // Windows connection sharing set up: tunnel -> hotspot
 	luid   uint64
 	addr   netip.Addr
 	subnet netip.Prefix
@@ -70,7 +72,7 @@ type accessPoint struct {
 	dns    *dnsRelay
 }
 
-func startAccessPoint(ssid, pass, dns string, onDNS func(netip.Addr)) (*accessPoint, error) {
+func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 	if len(pass) < 8 || len(pass) > 63 {
 		return nil, trErr("The hotspot password must have 8 to 63 characters")
 	}
@@ -130,10 +132,6 @@ func startAccessPoint(ssid, pass, dns string, onDNS func(netip.Addr)) (*accessPo
 		ap.Close()
 		return nil, err
 	}
-	if ap.dns, err = startDNSRelay(ap.addr, dns, onDNS); err != nil {
-		ap.Close()
-		return nil, fmt.Errorf("DNS: %w", err)
-	}
 	return ap, nil
 }
 
@@ -148,7 +146,7 @@ func (ap *accessPoint) findAdapter() error {
 			if !a.Up || !strings.Contains(a.Description, "Wi-Fi Direct Virtual Adapter") {
 				continue
 			}
-			ap.index, ap.luid = a.Index, a.LUID
+			ap.index, ap.luid, ap.name = a.Index, a.LUID, a.Name
 			for _, ip := range a.V4 {
 				if !ip.IsLinkLocalUnicast() {
 					ap.addr, ap.subnet = ip, netip.PrefixFrom(ip, 24).Masked()
@@ -184,6 +182,22 @@ func (ap *accessPoint) ensureDHCP() error {
 	}
 	ap.dhcp = d
 	return nil
+}
+
+// startDNS answers the devices' DNS on the hotspot address (after connection
+// sharing is set up, which may reconfigure the adapter).
+func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr)) error {
+	if ap.dns != nil {
+		return nil
+	}
+	var err error
+	for i := 0; i < 10; i++ { // the address may come back a moment after ICS reconfigured it
+		if ap.dns, err = startDNSRelay(ap.addr, upstream, onQuery); err == nil {
+			return nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return fmt.Errorf("DNS: %w", err)
 }
 
 func (ap *accessPoint) Alive() bool { return !ap.done.Load() }
@@ -236,16 +250,92 @@ func (ap *accessPoint) Close() {
 	}()
 }
 
-// routeHotspot sends the hotspot's traffic into the tunnel: IP forwarding
-// between the two adapters, and firewall rules so it cannot go anywhere else.
+// Windows Internet Connection Sharing (what Mobile Hotspot uses inside): the
+// tunnel adapter is the shared ("public") connection and the hotspot adapter
+// the home network. ICS gives the devices addresses and DNS, translates their
+// traffic onto the tunnel and opens Windows Firewall for it. Set through the
+// HNetCfg COM API; an empty public name turns sharing off again.
+const icsScript = `
+$ErrorActionPreference = 'Stop'
+$m = New-Object -ComObject HNetCfg.HNetShare
+$pub = $env:V2TUN_ICS_PUBLIC
+$priv = $env:V2TUN_ICS_PRIVATE
+$conns = @($m.EnumEveryConnection)
+foreach ($c in $conns) {
+  $p = $m.NetConnectionProps.Invoke($c)
+  $cfg = $m.INetSharingConfigurationForINetConnection.Invoke($c)
+  if ($cfg.SharingEnabled -and ($pub -eq '' -or $p.Name -eq $pub -or $p.Name -eq $priv -or $cfg.SharingConnectionType -eq 0)) { $cfg.DisableSharing() }
+}
+if ($pub -ne '') {
+  foreach ($c in $conns) {
+    $p = $m.NetConnectionProps.Invoke($c)
+    $cfg = $m.INetSharingConfigurationForINetConnection.Invoke($c)
+    if ($p.Name -eq $pub) { $cfg.EnableSharing(0) }
+  }
+  foreach ($c in $conns) {
+    $p = $m.NetConnectionProps.Invoke($c)
+    $cfg = $m.INetSharingConfigurationForINetConnection.Invoke($c)
+    if ($p.Name -eq $priv) { $cfg.EnableSharing(1) }
+  }
+}
+'ok'
+`
+
+func setICS(public, private string) error {
+	enc := utf16.Encode([]rune(icsScript))
+	b := make([]byte, 2*len(enc))
+	for i, c := range enc {
+		binary.LittleEndian.PutUint16(b[2*i:], c)
+	}
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+		"-EncodedCommand", base64.StdEncoding.EncodeToString(b))
+	cmd.Env = append(os.Environ(), "V2TUN_ICS_PUBLIC="+public, "V2TUN_ICS_PRIVATE="+private)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	out, err := cmd.CombinedOutput()
+	if err != nil || !strings.Contains(string(out), "ok") {
+		msg := strings.TrimSpace(string(out))
+		if i := strings.IndexByte(msg, '\n'); i > 0 {
+			msg = msg[:i]
+		}
+		return fmt.Errorf("%v %s", err, msg)
+	}
+	return nil
+}
+
+const relayRule = "v2tun hotspot DNS"
+
+// allowRelay opens Windows Firewall for v2tun's DNS relay on the hotspot
+// (the hotspot is an "unidentified", public network).
+func allowRelay() {
+	exe, err := os.Executable()
+	if err != nil {
+		return
+	}
+	run("netsh", "advfirewall", "firewall", "delete", "rule", "name="+relayRule)
+	for _, proto := range []string{"UDP", "TCP"} {
+		run("netsh", "advfirewall", "firewall", "add", "rule", "name="+relayRule, "dir=in", "action=allow",
+			"program="+exe, "protocol="+proto, "localport=53", "localip=192.168.137.0/24")
+	}
+}
+
+func removeRelayRule() { run("netsh", "advfirewall", "firewall", "delete", "rule", "name="+relayRule) }
+
+// routeHotspot sends the hotspot's traffic into the tunnel: connection sharing
+// from the tunnel adapter (or, if Windows refuses it, plain IP forwarding).
 func (e *Engine) routeHotspot(ap *accessPoint) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if !e.running {
 		return trErr("Connect first: the hotspot shares the tunnel")
 	}
-	tunIdx := e.tunIndex
-	for _, i := range []uint32{ap.index, tunIdx} {
+	allowRelay()
+	if err := setICS(tunName, ap.name); err != nil {
+		e.logf("warn", "Connection sharing (ICS) is not available (%v); using IP forwarding", err)
+	} else {
+		ap.ics = true
+		e.logf("info", "Connection sharing: tunnel → %s", ap.name)
+	}
+	for _, i := range []uint32{ap.index, e.tunIndex} {
 		if err := run("netsh", "interface", "ipv4", "set", "interface", strconv.Itoa(int(i)), "forwarding=enabled"); err != nil {
 			return err
 		}
@@ -262,6 +352,11 @@ func (e *Engine) routeHotspot(ap *accessPoint) error {
 func (e *Engine) unrouteHotspot(ap *accessPoint) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if ap.ics {
+		setICS("", "")
+		ap.ics = false
+	}
+	removeRelayRule()
 	run("netsh", "interface", "ipv4", "set", "interface", strconv.Itoa(int(ap.index)), "forwarding=disabled")
 	if e.running {
 		run("netsh", "interface", "ipv4", "set", "interface", strconv.Itoa(int(e.tunIndex)), "forwarding=disabled")
