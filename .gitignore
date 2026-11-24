@@ -1,0 +1,17 @@
+# build output
+*.exe
+/dist/
+/.gotmp/
+
+# local test / debug files
+*.log
+*.test
+*.out
+/tools/missing*.json
+/tools/tr-extra.json
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

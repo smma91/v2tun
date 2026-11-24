@@ -1,0 +1,1087 @@
+{
+ " (current internet)": {
+  "fa": " (اینترنت فعلی)",
+  "zh": "（当前网络）",
+  "ar": " (الإنترنت الحالي)"
+ },
+ "? Unknown: the web IP could not be read": {
+  "fa": "? نامشخص: IP وب خوانده نشد",
+  "zh": "? 未知：无法读取网页 IP",
+  "ar": "? غير معروف: تعذرت قراءة IP الويب"
+ },
+ "\"Proxy only\" works with the built-in core; v2rayN already has its own proxy": {
+  "fa": "«فقط پراکسی» فقط با هسته‌ی داخلی؛ v2rayN خودش پراکسی دارد",
+  "zh": "“仅代理”仅适用于内置核心；v2rayN 自带代理",
+  "ar": "«وكيل فقط» يعمل مع النواة المدمجة؛ v2rayN لديه وكيله الخاص"
+ },
+ "{0} servers": {
+  "fa": "{0} سرور",
+  "zh": "{0} 个服务器",
+  "ar": "{0} خوادم"
+ },
+ "%d servers added": {
+  "fa": "%d سرور اضافه شد",
+  "zh": "已添加 %d 个服务器",
+  "ar": "أُضيفت %d خوادم"
+ },
+ "%s %s via %s failed: %v": {
+  "fa": "%s %s از %s ناموفق: %v",
+  "zh": "%s %s 经 %s 失败：%v",
+  "ar": "فشل %s %s عبر %s: %v"
+ },
+ "✓ Pass": {
+  "fa": "✓ قبول",
+  "zh": "✓ 通过",
+  "ar": "✓ ناجح"
+ },
+ "✗ Fail": {
+  "fa": "✗ رد",
+  "zh": "✗ 未通过",
+  "ar": "✗ فاشل"
+ },
+ "6-second download through each server, one at a time": {
+  "fa": "دانلود ۶ ثانیه‌ای از طریق هر سرور، یکی‌یکی",
+  "zh": "经由每个服务器下载 6 秒，逐个测试",
+  "ar": "تنزيل لمدة 6 ثوانٍ عبر كل خادم، واحدًا تلو الآخر"
+ },
+ "A subscription link that was stored as a server has been fixed": {
+  "fa": "لینک Subscription که اشتباهی سرور ثبت شده بود اصلاح شد",
+  "zh": "已修复被误存为服务器的订阅链接",
+  "ar": "تم إصلاح رابط اشتراك حُفظ خطأً كخادم"
+ },
+ "Access printers and devices on your network (DNS still through the tunnel)": {
+  "fa": "دسترسی به پرینتر و دستگاه‌های داخل شبکه (DNS همچنان از تونل)",
+  "zh": "访问局域网中的打印机和设备（DNS 仍走隧道）",
+  "ar": "الوصول إلى الطابعات وأجهزة الشبكة (يبقى DNS عبر النفق)"
+ },
+ "Add": {
+  "fa": "افزودن",
+  "zh": "添加",
+  "ar": "إضافة"
+ },
+ "Add AnyConnect / OpenConnect / Fortinet / GlobalProtect": {
+  "fa": "افزودن AnyConnect / OpenConnect / Fortinet / GlobalProtect",
+  "zh": "添加 AnyConnect / OpenConnect / Fortinet / GlobalProtect",
+  "ar": "إضافة AnyConnect / OpenConnect / Fortinet / GlobalProtect"
+ },
+ "Add from clipboard": {
+  "fa": "افزودن از کلیپ‌بورد",
+  "zh": "从剪贴板添加",
+  "ar": "إضافة من الحافظة"
+ },
+ "Add links": {
+  "fa": "افزودن لینک‌ها",
+  "zh": "添加链接",
+  "ar": "إضافة الروابط"
+ },
+ "Add OpenVPN (.ovpn file)": {
+  "fa": "افزودن OpenVPN (فایل ‎.ovpn)",
+  "zh": "添加 OpenVPN（.ovpn 文件）",
+  "ar": "إضافة OpenVPN (ملف ‎.ovpn)"
+ },
+ "Add subscription": {
+  "fa": "افزودن Subscription",
+  "zh": "添加订阅",
+  "ar": "إضافة اشتراك"
+ },
+ "Add subscription or links manually": {
+  "fa": "افزودن Subscription یا لینک دستی",
+  "zh": "添加订阅或手动添加链接",
+  "ar": "إضافة اشتراك أو روابط يدويًا"
+ },
+ "Advanced settings": {
+  "fa": "تنظیمات پیشرفته",
+  "zh": "高级设置",
+  "ar": "إعدادات متقدمة"
+ },
+ "After you sign in to Windows, v2tun starts in the tray (no administrator prompt)": {
+  "fa": "بعد از ورود به ویندوز، v2tun کنار ساعت اجرا می‌شود (بدون پیغام Administrator)",
+  "zh": "登录 Windows 后，v2tun 在托盘中启动（无管理员提示）",
+  "ar": "بعد تسجيل الدخول إلى Windows يعمل v2tun في شريط النظام (دون مطالبة المسؤول)"
+ },
+ "All traffic goes through {0}": {
+  "fa": "همه‌ی ترافیک از {0} می‌گذرد",
+  "zh": "所有流量经由 {0}",
+  "ar": "كل حركة المرور تمر عبر {0}"
+ },
+ "All Windows apps": {
+  "fa": "همه‌ی برنامه‌های ویندوز",
+  "zh": "所有 Windows 应用",
+  "ar": "كل تطبيقات Windows"
+ },
+ "Allow from local network": {
+  "fa": "دسترسی از شبکه‌ی محلی",
+  "zh": "允许局域网访问",
+  "ar": "السماح من الشبكة المحلية"
+ },
+ "Allow QUIC / web UDP": {
+  "fa": "اجازه‌ی QUIC / UDP وب",
+  "zh": "允许 QUIC / 网页 UDP",
+  "ar": "السماح بـ QUIC / UDP للويب"
+ },
+ "also covers its subdomains. An empty list means everything goes through the tunnel.": {
+  "fa": "زیردامنه‌ها را هم شامل می‌شود. لیست خالی یعنی همه چیز از تونل.",
+  "zh": "也包括其子域名。列表为空表示全部走隧道。",
+  "ar": "يشمل نطاقاته الفرعية أيضًا. القائمة الفارغة تعني أن كل شيء يمر عبر النفق."
+ },
+ "Among all servers": {
+  "fa": "بین همه‌ی سرورها",
+  "zh": "在所有服务器中选择",
+  "ar": "من بين كل الخوادم"
+ },
+ "Another TUN is active ({0}), e.g. v2rayN's own TUN mode. Turn it off first.": {
+  "fa": "یک TUN دیگر روشن است ({0})، مثلاً حالت TUN خود v2rayN. اول آن را خاموش کنید.",
+  "zh": "另一个 TUN 已启用（{0}），例如 v2rayN 自带的 TUN 模式。请先将其关闭。",
+  "ar": "يوجد TUN آخر قيد التشغيل ({0})، مثل وضع TUN في v2rayN. أوقفه أولًا."
+ },
+ "Apps": {
+  "fa": "برنامه‌ها",
+  "zh": "应用程序",
+  "ar": "التطبيقات"
+ },
+ "Auto (fastest server)": {
+  "fa": "خودکار (سریع‌ترین سرور)",
+  "zh": "自动（最快的服务器）",
+  "ar": "تلقائي (أسرع خادم)"
+ },
+ "Auto (fastest)": {
+  "fa": "خودکار (سریع‌ترین)",
+  "zh": "自动（最快）",
+  "ar": "تلقائي (الأسرع)"
+ },
+ "Auto-connect": {
+  "fa": "اتصال خودکار",
+  "zh": "自动连接",
+  "ar": "الاتصال التلقائي"
+ },
+ "Auto-connect failed: v2rayN was not available": {
+  "fa": "اتصال خودکار انجام نشد: v2rayN در دسترس نبود",
+  "zh": "自动连接失败：v2rayN 不可用",
+  "ar": "فشل الاتصال التلقائي: v2rayN غير متاح"
+ },
+ "Auto-connect on start": {
+  "fa": "اتصال خودکار هنگام اجرا",
+  "zh": "启动时自动连接",
+  "ar": "الاتصال التلقائي عند التشغيل"
+ },
+ "Auto-connect: waiting for the network and proxy…": {
+  "fa": "اتصال خودکار: منتظر آماده شدن شبکه و پراکسی…",
+  "zh": "自动连接：等待网络和代理就绪…",
+  "ar": "الاتصال التلقائي: بانتظار جاهزية الشبكة والوكيل…"
+ },
+ "Auto-switch when a server fails": {
+  "fa": "سوئیچ خودکار با قطعی سرور",
+  "zh": "服务器故障时自动切换",
+  "ar": "التبديل التلقائي عند تعطل الخادم"
+ },
+ "Auto-switched to \"%s\" (%dms)": {
+  "fa": "سوئیچ خودکار به «%s» (%dms)",
+  "zh": "已自动切换到“%s”（%dms）",
+  "ar": "تم التبديل تلقائيًا إلى «%s» (%dms)"
+ },
+ "Auto-update subscriptions": {
+  "fa": "به‌روزرسانی خودکار Subscription",
+  "zh": "自动更新订阅",
+  "ar": "التحديث التلقائي للاشتراكات"
+ },
+ "Auto-updating subscriptions…": {
+  "fa": "به‌روزرسانی خودکار Subscriptionها…",
+  "zh": "正在自动更新订阅…",
+  "ar": "جارٍ التحديث التلقائي للاشتراكات…"
+ },
+ "Automatic": {
+  "fa": "خودکار",
+  "zh": "自动",
+  "ar": "تلقائي"
+ },
+ "Blocked (no leak)": {
+  "fa": "مسدود (بدون نشت)",
+  "zh": "已阻止（无泄漏）",
+  "ar": "محجوب (بلا تسرب)"
+ },
+ "Both": {
+  "fa": "هر دو",
+  "zh": "两者",
+  "ar": "كلاهما"
+ },
+ "Built-in core": {
+  "fa": "هسته‌ی داخلی",
+  "zh": "内置核心",
+  "ar": "النواة المدمجة"
+ },
+ "Built-in core running on %s (%d servers, via %s)": {
+  "fa": "هسته‌ی داخلی روی %s اجرا شد (%d سرور، از طریق %s)",
+  "zh": "内置核心运行于 %s（%d 个服务器，经由 %s）",
+  "ar": "النواة المدمجة تعمل على %s (%d خوادم، عبر %s)"
+ },
+ "Changes apply immediately": {
+  "fa": "تغییرات فوراً اعمال می‌شود",
+  "zh": "更改立即生效",
+  "ar": "تُطبَّق التغييرات فورًا"
+ },
+ "Changes in this section apply on the next connection": {
+  "fa": "تغییرات این بخش از اتصال بعدی اعمال می‌شود",
+  "zh": "此部分的更改将在下次连接时生效",
+  "ar": "تُطبَّق تغييرات هذا القسم عند الاتصال التالي"
+ },
+ "Choose .ovpn file": {
+  "fa": "انتخاب فایل ‎.ovpn",
+  "zh": "选择 .ovpn 文件",
+  "ar": "اختيار ملف ‎.ovpn"
+ },
+ "Choose an .exe file": {
+  "fa": "انتخاب فایل exe",
+  "zh": "选择 .exe 文件",
+  "ar": "اختيار ملف ‎.exe"
+ },
+ "Choose an app": {
+  "fa": "انتخاب برنامه",
+  "zh": "选择应用",
+  "ar": "اختيار تطبيق"
+ },
+ "Close": {
+  "fa": "بستن",
+  "zh": "关闭",
+  "ar": "إغلاق"
+ },
+ "Closing open connections took too long; finishing the disconnect without waiting": {
+  "fa": "بستن اتصال‌های باز طول کشید؛ ادامه‌ی قطع بدون انتظار",
+  "zh": "关闭现有连接耗时过长；不再等待，继续断开",
+  "ar": "استغرق إغلاق الاتصالات المفتوحة وقتًا طويلًا؛ يُستكمل قطع الاتصال دون انتظار"
+ },
+ "Closing the window quits": {
+  "fa": "بستن پنجره = خروج کامل",
+  "zh": "关闭窗口即退出",
+  "ar": "إغلاق النافذة يعني الخروج"
+ },
+ "Connect": {
+  "fa": "اتصال",
+  "zh": "连接",
+  "ar": "اتصال"
+ },
+ "Connect as soon as the network and proxy are ready when the app starts": {
+  "fa": "هنگام اجرای برنامه، به محض آماده شدن شبکه و پراکسی وصل شود",
+  "zh": "应用启动后，网络和代理就绪即自动连接",
+  "ar": "الاتصال فور جاهزية الشبكة والوكيل عند تشغيل التطبيق"
+ },
+ "Connected": {
+  "fa": "وصل",
+  "zh": "已连接",
+  "ar": "متصل"
+ },
+ "Connecting…": {
+  "fa": "در حال اتصال…",
+  "zh": "正在连接…",
+  "ar": "جارٍ الاتصال…"
+ },
+ "Connection list: %v": {
+  "fa": "لیست کانکشن‌ها: %v",
+  "zh": "连接列表：%v",
+  "ar": "قائمة الاتصالات: %v"
+ },
+ "Connection mode": {
+  "fa": "حالت اتصال",
+  "zh": "连接模式",
+  "ar": "وضع الاتصال"
+ },
+ "Connection not found or not connected to the internet": {
+  "fa": "کانکشن پیدا نشد یا به اینترنت وصل نیست",
+  "zh": "未找到该连接或其未接入互联网",
+  "ar": "الاتصال غير موجود أو غير متصل بالإنترنت"
+ },
+ "Connections": {
+  "fa": "اتصال‌ها",
+  "zh": "连接数",
+  "ar": "الاتصالات"
+ },
+ "Core: %v": {
+  "fa": "هسته: %v",
+  "zh": "核心：%v",
+  "ar": "النواة: %v"
+ },
+ "direct": {
+  "fa": "مستقیم",
+  "zh": "直连",
+  "ar": "مباشر"
+ },
+ "Disconnect": {
+  "fa": "قطع اتصال",
+  "zh": "断开",
+  "ar": "قطع الاتصال"
+ },
+ "Disconnecting…": {
+  "fa": "در حال قطع…",
+  "zh": "正在断开…",
+  "ar": "جارٍ قطع الاتصال…"
+ },
+ "DNS of \"%s\" → %s": {
+  "fa": "DNS کانکشن «%s» ← %s",
+  "zh": "“%s”的 DNS → %s",
+  "ar": "DNS للاتصال «%s» ← %s"
+ },
+ "DNS of the Windows internet connection": {
+  "fa": "DNS کانکشن اینترنت ویندوز",
+  "zh": "Windows 网络连接的 DNS",
+  "ar": "DNS لاتصال الإنترنت في Windows"
+ },
+ "DNS queries never leave this PC; the server looks names up in the exit country, so DNS leak tests come out clean": {
+  "fa": "درخواست‌های DNS از کامپیوتر بیرون نمی‌روند و سرور نام سایت‌ها را در همان کشور خروجی پیدا می‌کند؛ تست نشت DNS تمیز می‌شود",
+  "zh": "DNS 查询不会离开本机；服务器在出口国家解析域名，DNS 泄漏测试结果干净",
+  "ar": "لا تغادر طلبات DNS هذا الحاسوب؛ يحل الخادم الأسماء في بلد الخروج، فتظهر اختبارات تسرب DNS نظيفة"
+ },
+ "DNS servers (inside the tunnel)": {
+  "fa": "سرورهای DNS (داخل تونل)",
+  "zh": "DNS 服务器（隧道内）",
+  "ar": "خوادم DNS (داخل النفق)"
+ },
+ "Domains & IPs": {
+  "fa": "دامنه‌ها و IPها",
+  "zh": "域名和 IP",
+  "ar": "النطاقات وعناوين IP"
+ },
+ "Download": {
+  "fa": "دانلود",
+  "zh": "下载",
+  "ar": "التنزيل"
+ },
+ "Enter the server address": {
+  "fa": "آدرس سرور را وارد کنید",
+  "zh": "请输入服务器地址",
+  "ar": "أدخل عنوان الخادم"
+ },
+ "Error: {0}": {
+  "fa": "خطا: {0}",
+  "zh": "错误：{0}",
+  "ar": "خطأ: {0}"
+ },
+ "Every 12 hours": {
+  "fa": "هر ۱۲ ساعت",
+  "zh": "每 12 小时",
+  "ar": "كل 12 ساعة"
+ },
+ "Every 3 hours": {
+  "fa": "هر ۳ ساعت",
+  "zh": "每 3 小时",
+  "ar": "كل 3 ساعات"
+ },
+ "Every 6 hours": {
+  "fa": "هر ۶ ساعت",
+  "zh": "每 6 小时",
+  "ar": "كل 6 ساعات"
+ },
+ "Everything through the tunnel, except these": {
+  "fa": "همه از تونل، به‌جز این‌ها",
+  "zh": "全部走隧道，以下除外",
+  "ar": "كل شيء عبر النفق، باستثناء هذه"
+ },
+ "Exit IP": {
+  "fa": "IP خروجی",
+  "zh": "出口 IP",
+  "ar": "IP الخروج"
+ },
+ "Exit IP: %s (%s, %s)": {
+  "fa": "IP خروجی: %s (%s, %s)",
+  "zh": "出口 IP：%s（%s，%s）",
+  "ar": "IP الخروج: %s (%s، %s)"
+ },
+ "Exit IP: %v": {
+  "fa": "IP خروجی: %v",
+  "zh": "出口 IP：%v",
+  "ar": "IP الخروج: %v"
+ },
+ "Fetching…": {
+  "fa": "در حال دریافت…",
+  "zh": "正在获取…",
+  "ar": "جارٍ الجلب…"
+ },
+ "File…": {
+  "fa": "فایل…",
+  "zh": "文件…",
+  "ar": "ملف…"
+ },
+ "Group (optional)": {
+  "fa": "گروه (اختیاری)",
+  "zh": "组（可选）",
+  "ar": "المجموعة (اختياري)"
+ },
+ "If the tunnel or proxy drops, the internet stays blocked and nothing leaks": {
+  "fa": "اگر تونل یا پراکسی قطع شود، اینترنت بسته می‌ماند و چیزی لو نمی‌رود",
+  "zh": "隧道或代理断开时保持断网，不会泄漏任何流量",
+  "ar": "إذا انقطع النفق أو الوكيل يبقى الإنترنت محجوبًا ولا يتسرب شيء"
+ },
+ "In \"Proxy only\" mode, browsers and apps use it automatically": {
+  "fa": "در حالت «فقط پراکسی»، مرورگرها و برنامه‌ها خودکار از آن استفاده می‌کنند",
+  "zh": "在“仅代理”模式下，浏览器和应用会自动使用它",
+  "ar": "في وضع «وكيل فقط» تستخدمه المتصفحات والتطبيقات تلقائيًا"
+ },
+ "IP & WebRTC leak test": {
+  "fa": "تست نشت IP و WebRTC",
+  "zh": "IP 与 WebRTC 泄漏测试",
+  "ar": "اختبار تسرب IP و WebRTC"
+ },
+ "IPv6 & DNS leak guard": {
+  "fa": "محافظ نشت IPv6 و DNS",
+  "zh": "IPv6 与 DNS 泄漏防护",
+  "ar": "الحماية من تسرب IPv6 وDNS"
+ },
+ "Kill switch": {
+  "fa": "کیل‌سوئیچ",
+  "zh": "断网保护",
+  "ar": "مفتاح الإيقاف"
+ },
+ "Kill switch enabled (%d allowed apps)": {
+  "fa": "کیل‌سوئیچ فعال شد (%d برنامه‌ی مجاز)",
+  "zh": "断网保护已启用（%d 个允许的应用）",
+  "ar": "تم تفعيل مفتاح الإيقاف (%d تطبيقات مسموحة)"
+ },
+ "Kill switch is off; IPv6 and DNS leak protection enabled": {
+  "fa": "کیل‌سوئیچ خاموش است؛ محافظ نشت IPv6 و DNS فعال شد",
+  "zh": "断网保护已关闭；已启用 IPv6 和 DNS 泄漏防护",
+  "ar": "مفتاح الإيقاف متوقف؛ تم تفعيل الحماية من تسرب IPv6 وDNS"
+ },
+ "Language": {
+  "fa": "زبان",
+  "zh": "语言",
+  "ar": "اللغة"
+ },
+ "Leak test: fail ✗ (web %s, WebRTC %s)": {
+  "fa": "تست نشت: رد ✗ (وب %s، WebRTC %s)",
+  "zh": "泄漏测试：未通过 ✗（网页 %s，WebRTC %s）",
+  "ar": "اختبار التسرب: فاشل ✗ (الويب %s، WebRTC %s)"
+ },
+ "Leak test: pass ✓ (web %s, WebRTC %s)": {
+  "fa": "تست نشت: قبول ✓ (وب %s، WebRTC %s)",
+  "zh": "泄漏测试：通过 ✓（网页 %s，WebRTC %s）",
+  "ar": "اختبار التسرب: ناجح ✓ (الويب %s، WebRTC %s)"
+ },
+ "Leak test: the web IP could not be read (%s)": {
+  "fa": "تست نشت: IP وب خوانده نشد (%s)",
+  "zh": "泄漏测试：无法读取网页 IP（%s）",
+  "ar": "اختبار التسرب: تعذرت قراءة IP الويب (%s)"
+ },
+ "Let the server resolve DNS (recommended)": {
+  "fa": "DNS را سرور حل کند (پیشنهادی)",
+  "zh": "由服务器解析 DNS（推荐）",
+  "ar": "دع الخادم يحل DNS (موصى به)"
+ },
+ "Links or Clash text (vless, vmess, trojan, ss, hysteria2, tuic, wireguard, ssh, naive, anyconnect, socks…)": {
+  "fa": "لینک‌ها یا متن Clash (vless، vmess، trojan، ss، hysteria2، tuic، wireguard، ssh، naive، anyconnect، socks…)",
+  "zh": "链接或 Clash 配置（vless、vmess、trojan、ss、hysteria2、tuic、wireguard、ssh、naive、anyconnect、socks…）",
+  "ar": "روابط أو نص Clash (vless، vmess، trojan، ss، hysteria2، tuic، wireguard، ssh، naive، anyconnect، socks…)"
+ },
+ "Listed apps go direct": {
+  "fa": "برنامه‌های لیست مستقیم می‌روند",
+  "zh": "列表中的应用直连",
+  "ar": "التطبيقات المدرجة تتصل مباشرة"
+ },
+ "Listed domains go direct": {
+  "fa": "دامنه‌های لیست مستقیم می‌روند",
+  "zh": "列表中的域名直连",
+  "ar": "النطاقات المدرجة تتصل مباشرة"
+ },
+ "Local network": {
+  "fa": "شبکه‌ی محلی",
+  "zh": "局域网",
+  "ar": "الشبكة المحلية"
+ },
+ "Local proxy": {
+  "fa": "پراکسی محلی",
+  "zh": "本地代理",
+  "ar": "الوكيل المحلي"
+ },
+ "Local proxy active: {0}": {
+  "fa": "پراکسی محلی فعال است: {0}",
+  "zh": "本地代理已启用：{0}",
+  "ar": "الوكيل المحلي نشط: {0}"
+ },
+ "Local proxy active: %s": {
+  "fa": "پراکسی محلی فعال است: %s",
+  "zh": "本地代理已启用：%s",
+  "ar": "الوكيل المحلي نشط: %s"
+ },
+ "Local proxy stopped": {
+  "fa": "پراکسی محلی خاموش شد",
+  "zh": "本地代理已关闭",
+  "ar": "توقف الوكيل المحلي"
+ },
+ "Local SOCKS/HTTP proxy": {
+  "fa": "پراکسی محلی SOCKS/HTTP",
+  "zh": "本地 SOCKS/HTTP 代理",
+  "ar": "وكيل SOCKS/HTTP محلي"
+ },
+ "Logs": {
+  "fa": "گزارش‌ها",
+  "zh": "日志",
+  "ar": "السجلات"
+ },
+ "Main internet: %s": {
+  "fa": "اینترنت اصلی: %s",
+  "zh": "主网络：%s",
+  "ar": "الإنترنت الرئيسي: %s"
+ },
+ "Manual servers": {
+  "fa": "سرورهای دستی",
+  "zh": "手动添加的服务器",
+  "ar": "خوادم مضافة يدويًا"
+ },
+ "Match time zone": {
+  "fa": "هماهنگ‌کردن منطقه‌ی زمانی",
+  "zh": "匹配时区",
+  "ar": "مطابقة المنطقة الزمنية"
+ },
+ "Minimize": {
+  "fa": "کوچک کردن",
+  "zh": "最小化",
+  "ar": "تصغير"
+ },
+ "Name (optional)": {
+  "fa": "نام (اختیاری)",
+  "zh": "名称（可选）",
+  "ar": "الاسم (اختياري)"
+ },
+ "Network changed: %s": {
+  "fa": "شبکه عوض شد: %s",
+  "zh": "网络已变更：%s",
+  "ar": "تغيرت الشبكة: %s"
+ },
+ "No connection with internet access found": {
+  "fa": "هیچ کانکشن متصل به اینترنت پیدا نشد",
+  "zh": "未找到可上网的网络连接",
+  "ar": "لم يُعثر على اتصال متصل بالإنترنت"
+ },
+ "No new server in the clipboard (duplicate or invalid).": {
+  "fa": "سرور جدیدی در کلیپ‌بورد نبود (تکراری یا نامعتبر).",
+  "zh": "剪贴板中没有新服务器（重复或无效）。",
+  "ar": "لا يوجد خادم جديد في الحافظة (مكرر أو غير صالح)."
+ },
+ "No servers yet. Add a link or subscription in the \"Servers\" tab.": {
+  "fa": "هنوز سروری اضافه نشده. از زبانه‌ی «سرورها» لینک یا Subscription اضافه کنید.",
+  "zh": "尚未添加服务器。请在“服务器”标签页中添加链接或订阅。",
+  "ar": "لا توجد خوادم بعد. أضف رابطًا أو اشتراكًا من تبويب «الخوادم»."
+ },
+ "No servers yet.<br>Copy a config link and press \"Add from clipboard\",<br>or enter a subscription URL.": {
+  "fa": "هنوز سروری نیست.<br>لینک کانفیگ را کپی کنید و «افزودن از کلیپ‌بورد» را بزنید،<br>یا آدرس Subscription را وارد کنید.",
+  "zh": "尚无服务器。<br>复制配置链接后点击“从剪贴板添加”，<br>或输入订阅地址。",
+  "ar": "لا توجد خوادم بعد.<br>انسخ رابط الإعداد واضغط «إضافة من الحافظة»،<br>أو أدخل رابط اشتراك."
+ },
+ "No usable server in the list": {
+  "fa": "هیچ سرور قابل استفاده‌ای در لیست نیست",
+  "zh": "列表中没有可用的服务器",
+  "ar": "لا يوجد خادم صالح في القائمة"
+ },
+ "No valid link or config found": {
+  "fa": "هیچ لینک یا کانفیگ معتبری پیدا نشد",
+  "zh": "未找到有效的链接或配置",
+  "ar": "لم يُعثر على رابط أو إعداد صالح"
+ },
+ "No working server found": {
+  "fa": "هیچ سرور سالمی پیدا نشد",
+  "zh": "未找到可用服务器",
+  "ar": "لم يُعثر على خادم يعمل"
+ },
+ "Now: {0}": {
+  "fa": "الان: {0}",
+  "zh": "当前：{0}",
+  "ar": "الآن: {0}"
+ },
+ "Off": {
+  "fa": "خاموش",
+  "zh": "关闭",
+  "ar": "متوقف"
+ },
+ "Offline": {
+  "fa": "قطع",
+  "zh": "离线",
+  "ar": "غير متصل"
+ },
+ "Once a day": {
+  "fa": "روزی یک بار",
+  "zh": "每天一次",
+  "ar": "مرة يوميًا"
+ },
+ "One entry per line.": {
+  "fa": "هر خط یک مورد.",
+  "zh": "每行一项。",
+  "ar": "عنصر واحد في كل سطر."
+ },
+ "Only if your server supports UDP; otherwise YouTube and Google are slow or do not load": {
+  "fa": "فقط اگر سرور شما UDP را پشتیبانی می‌کند؛ وگرنه یوتیوب و گوگل کند یا باز نمی‌شوند",
+  "zh": "仅当服务器支持 UDP 时开启；否则 YouTube 和 Google 会变慢或无法打开",
+  "ar": "فقط إذا كان خادمك يدعم UDP؛ وإلا سيكون YouTube و Google بطيئين أو لن يفتحا"
+ },
+ "Only these through the tunnel": {
+  "fa": "فقط این‌ها از تونل",
+  "zh": "仅以下走隧道",
+  "ar": "هذه فقط عبر النفق"
+ },
+ "OpenVPN file": {
+  "fa": "فایل OpenVPN",
+  "zh": "OpenVPN 文件",
+  "ar": "ملف OpenVPN"
+ },
+ "Other apps go direct": {
+  "fa": "بقیه‌ی برنامه‌ها مستقیم می‌روند",
+  "zh": "其他应用直连",
+  "ar": "بقية التطبيقات تتصل مباشرة"
+ },
+ "Other devices on this network (phone, laptop) can use this proxy too; it has no password": {
+  "fa": "دستگاه‌های دیگر همین شبکه (گوشی، لپ‌تاپ) هم می‌توانند از این پراکسی استفاده کنند؛ رمز ندارد",
+  "zh": "同一网络中的其他设备（手机、笔记本）也可使用此代理；无密码",
+  "ar": "يمكن لأجهزة أخرى على هذه الشبكة (هاتف، حاسوب) استخدام هذا الوكيل أيضًا؛ دون كلمة مرور"
+ },
+ "Other sites go direct": {
+  "fa": "بقیه‌ی سایت‌ها مستقیم می‌روند",
+  "zh": "其他网站直连",
+  "ar": "بقية المواقع تتصل مباشرة"
+ },
+ "Password": {
+  "fa": "رمز",
+  "zh": "密码",
+  "ar": "كلمة المرور"
+ },
+ "Pick from running apps…": {
+  "fa": "انتخاب از برنامه‌های در حال اجرا…",
+  "zh": "从正在运行的应用中选择…",
+  "ar": "اختيار من التطبيقات قيد التشغيل…"
+ },
+ "Ping": {
+  "fa": "پینگ",
+  "zh": "延迟",
+  "ar": "Ping"
+ },
+ "Please wait": {
+  "fa": "صبر کنید",
+  "zh": "请稍候",
+  "ar": "يرجى الانتظار"
+ },
+ "Please wait…": {
+  "fa": "صبر کنید…",
+  "zh": "请稍候…",
+  "ar": "يرجى الانتظار…"
+ },
+ "Port": {
+  "fa": "پورت",
+  "zh": "端口",
+  "ar": "المنفذ"
+ },
+ "Port %d is in use; choose another port in Settings": {
+  "fa": "پورت %d در حال استفاده است؛ در تنظیمات پورت دیگری انتخاب کنید",
+  "zh": "端口 %d 已被占用；请在设置中选择其他端口",
+  "ar": "المنفذ %d قيد الاستخدام؛ اختر منفذًا آخر في الإعدادات"
+ },
+ "Protocol %s is not supported": {
+  "fa": "پروتکل %s پشتیبانی نمی‌شود",
+  "zh": "不支持协议 %s",
+  "ar": "البروتوكول %s غير مدعوم"
+ },
+ "Proxy (%s) does not respond; traffic stopped (no leak)": {
+  "fa": "پراکسی (%s) جواب نمی‌دهد؛ ترافیک متوقف شد (بدون نشت)",
+  "zh": "代理（%s）无响应；流量已停止（无泄漏）",
+  "ar": "الوكيل (%s) لا يستجيب؛ توقفت حركة المرور (بلا تسرب)"
+ },
+ "Proxy is available again": {
+  "fa": "پراکسی دوباره در دسترس است",
+  "zh": "代理已恢复",
+  "ar": "الوكيل متاح مجددًا"
+ },
+ "Proxy only": {
+  "fa": "فقط پراکسی",
+  "zh": "仅代理",
+  "ar": "وكيل فقط"
+ },
+ "Proxy source": {
+  "fa": "منبع پراکسی",
+  "zh": "代理来源",
+  "ar": "مصدر الوكيل"
+ },
+ "Proxy source: %s": {
+  "fa": "منبع پراکسی: %s",
+  "zh": "代理来源：%s",
+  "ar": "مصدر الوكيل: %s"
+ },
+ "Quit": {
+  "fa": "خروج کامل",
+  "zh": "退出",
+  "ar": "خروج"
+ },
+ "Quit (disconnect tunnel)": {
+  "fa": "خروج کامل (قطع تونل)",
+  "zh": "退出（断开隧道）",
+  "ar": "خروج (قطع النفق)"
+ },
+ "Real delay": {
+  "fa": "تأخیر واقعی",
+  "zh": "真实延迟",
+  "ar": "التأخير الفعلي"
+ },
+ "Remove": {
+  "fa": "حذف",
+  "zh": "删除",
+  "ar": "حذف"
+ },
+ "Remove subscription": {
+  "fa": "حذف Subscription",
+  "zh": "删除订阅",
+  "ar": "حذف الاشتراك"
+ },
+ "Remove subscription \"{0}\" and its servers?": {
+  "fa": "Subscription «{0}» و سرورهایش حذف شوند؟",
+  "zh": "删除订阅“{0}”及其服务器？",
+  "ar": "حذف الاشتراك «{0}» وخوادمه؟"
+ },
+ "Restore previous DNS": {
+  "fa": "بازگرداندن DNS قبلی",
+  "zh": "恢复之前的 DNS",
+  "ar": "استعادة DNS السابق"
+ },
+ "Routing": {
+  "fa": "مسیریابی",
+  "zh": "路由",
+  "ar": "التوجيه"
+ },
+ "Run test": {
+  "fa": "اجرای تست",
+  "zh": "开始测试",
+  "ar": "تشغيل الاختبار"
+ },
+ "Server %s → %v": {
+  "fa": "سرور %s ← %v",
+  "zh": "服务器 %s → %v",
+  "ar": "الخادم %s ← %v"
+ },
+ "Server address": {
+  "fa": "آدرس سرور",
+  "zh": "服务器地址",
+  "ar": "عنوان الخادم"
+ },
+ "Server ping: %d of %d answered": {
+  "fa": "پینگ سرورها: %d از %d جواب دادند",
+  "zh": "服务器延迟：%d / %d 有响应",
+  "ar": "Ping الخوادم: استجاب %d من %d"
+ },
+ "Server selected: %s": {
+  "fa": "سرور انتخاب شد: %s",
+  "zh": "已选择服务器：%s",
+  "ar": "تم اختيار الخادم: %s"
+ },
+ "Server test: %d of %d working": {
+  "fa": "تست سرورها: %d از %d سالم",
+  "zh": "服务器测试：%d / %d 可用",
+  "ar": "اختبار الخوادم: %d من %d تعمل"
+ },
+ "Servers": {
+  "fa": "سرورها",
+  "zh": "服务器",
+  "ar": "الخوادم"
+ },
+ "Servers in this app": {
+  "fa": "سرورهای همین برنامه",
+  "zh": "本应用中的服务器",
+  "ar": "خوادم هذا التطبيق"
+ },
+ "Set Windows proxy": {
+  "fa": "تنظیم پراکسی ویندوز",
+  "zh": "设置 Windows 代理",
+  "ar": "ضبط وكيل Windows"
+ },
+ "Sets the Windows time zone to the server's country": {
+  "fa": "منطقه‌ی زمانی ویندوز با کشور سرور یکی می‌شود",
+  "zh": "将 Windows 时区设为服务器所在国家",
+  "ar": "يضبط المنطقة الزمنية في Windows على بلد الخادم"
+ },
+ "Settings": {
+  "fa": "تنظیمات",
+  "zh": "设置",
+  "ar": "الإعدادات"
+ },
+ "Show v2tun": {
+  "fa": "نمایش v2tun",
+  "zh": "显示 v2tun",
+  "ar": "إظهار v2tun"
+ },
+ "SOCKS5 and HTTP port of the built-in core": {
+  "fa": "پورت SOCKS5 و HTTP هسته‌ی داخلی",
+  "zh": "内置核心的 SOCKS5 和 HTTP 端口",
+  "ar": "منفذ SOCKS5 وHTTP للنواة المدمجة"
+ },
+ "Speed test": {
+  "fa": "تست سرعت",
+  "zh": "测速",
+  "ar": "اختبار السرعة"
+ },
+ "Speed test \"%s\": %.1f Mbps": {
+  "fa": "تست سرعت «%s»: %.1f Mbps",
+  "zh": "测速“%s”：%.1f Mbps",
+  "ar": "اختبار سرعة «%s»: %.1f Mbps"
+ },
+ "Speed test \"%s\": failed (%v)": {
+  "fa": "تست سرعت «%s»: ناموفق (%v)",
+  "zh": "测速“%s”：失败（%v）",
+  "ar": "اختبار سرعة «%s»: فشل (%v)"
+ },
+ "Split tunneling": {
+  "fa": "تقسیم ترافیک",
+  "zh": "分流",
+  "ar": "تقسيم حركة المرور"
+ },
+ "Split tunneling rules updated (apps: %d, domains: %d)": {
+  "fa": "قوانین تقسیم ترافیک به‌روز شد (برنامه‌ها: %d، دامنه‌ها: %d)",
+  "zh": "分流规则已更新（应用：%d，域名：%d）",
+  "ar": "تم تحديث قواعد التقسيم (التطبيقات: %d، النطاقات: %d)"
+ },
+ "Start with Windows": {
+  "fa": "اجرا با ویندوز",
+  "zh": "开机启动",
+  "ar": "التشغيل مع Windows"
+ },
+ "Start with Windows turned off": {
+  "fa": "اجرای خودکار با ویندوز خاموش شد",
+  "zh": "已关闭开机启动",
+  "ar": "تم إيقاف التشغيل مع Windows"
+ },
+ "Start with Windows: %v": {
+  "fa": "اجرا با ویندوز: %v",
+  "zh": "开机启动：%v",
+  "ar": "التشغيل مع Windows: %v"
+ },
+ "Subscription \"%s\": %d servers": {
+  "fa": "Subscription «%s»: %d سرور",
+  "zh": "订阅“%s”：%d 个服务器",
+  "ar": "الاشتراك «%s»: %d خوادم"
+ },
+ "Subscription URL": {
+  "fa": "آدرس Subscription",
+  "zh": "订阅地址",
+  "ar": "رابط الاشتراك"
+ },
+ "System-wide tunnel": {
+  "fa": "تونل سراسری",
+  "zh": "全局隧道",
+  "ar": "نفق شامل"
+ },
+ "System-wide tunnel up → %s": {
+  "fa": "تونل سراسری برقرار شد ← %s",
+  "zh": "全局隧道已建立 → %s",
+  "ar": "تم إنشاء النفق الشامل ← %s"
+ },
+ "Tap to connect": {
+  "fa": "برای اتصال بزنید",
+  "zh": "点击连接",
+  "ar": "اضغط للاتصال"
+ },
+ "Testing…": {
+  "fa": "در حال تست…",
+  "zh": "正在测试…",
+  "ar": "جارٍ الاختبار…"
+ },
+ "The .ovpn file has no CA certificate (<ca>)": {
+  "fa": "فایل .ovpn گواهی CA (<ca>) ندارد",
+  "zh": ".ovpn 文件中没有 CA 证书（<ca>）",
+  "ar": "ملف ‎.ovpn لا يحتوي على شهادة CA ‏(<ca>)"
+ },
+ "The .ovpn file has no remote": {
+  "fa": "فایل .ovpn هیچ remote ندارد",
+  "zh": ".ovpn 文件中没有 remote",
+  "ar": "ملف ‎.ovpn لا يحتوي على remote"
+ },
+ "The built-in core does not respond on %s": {
+  "fa": "هسته‌ی داخلی روی %s جواب نمی‌دهد",
+  "zh": "内置核心在 %s 上无响应",
+  "ar": "النواة المدمجة لا تستجيب على %s"
+ },
+ "The clipboard is empty": {
+  "fa": "کلیپ‌بورد خالی است",
+  "zh": "剪贴板为空",
+  "ar": "الحافظة فارغة"
+ },
+ "The list is empty; all apps go through the tunnel": {
+  "fa": "لیست خالی است؛ همه‌ی برنامه‌ها از تونل می‌روند",
+  "zh": "列表为空；所有应用都走隧道",
+  "ar": "القائمة فارغة؛ كل التطبيقات تمر عبر النفق"
+ },
+ "The previous run was closed without disconnecting; network settings were restored": {
+  "fa": "اجرای قبلی بدون قطع اتصال بسته شده بود؛ تنظیمات شبکه به حالت عادی برگشت",
+  "zh": "上次运行未断开就被关闭；网络设置已恢复",
+  "ar": "أُغلق التشغيل السابق دون قطع الاتصال؛ أُعيدت إعدادات الشبكة"
+ },
+ "The selected server does not respond; looking for a working one…": {
+  "fa": "سرور انتخابی جواب نمی‌دهد؛ جست‌وجوی سرور سالم…",
+  "zh": "所选服务器无响应；正在寻找可用服务器…",
+  "ar": "الخادم المحدد لا يستجيب؛ جارٍ البحث عن خادم يعمل…"
+ },
+ "The server list changed; it will apply on the next connection so open connections are not cut": {
+  "fa": "لیست سرورها تغییر کرد؛ برای قطع نشدن اتصال‌های باز، از اتصال بعدی اعمال می‌شود",
+  "zh": "服务器列表已变更；将在下次连接时生效，以免中断现有连接",
+  "ar": "تغيرت قائمة الخوادم؛ ستُطبَّق عند الاتصال التالي حتى لا تنقطع الاتصالات المفتوحة"
+ },
+ "The SOCKS proxy at {0} does not respond. Open v2rayN and connect to a server.": {
+  "fa": "پراکسی SOCKS روی {0} جواب نمی‌دهد. v2rayN را باز کنید و به یک سرور وصل شوید.",
+  "zh": "{0} 上的 SOCKS 代理无响应。请打开 v2rayN 并连接服务器。",
+  "ar": "وكيل SOCKS على {0} لا يستجيب. افتح v2rayN واتصل بخادم."
+ },
+ "The SOCKS proxy at %s is not available. Start v2rayN and connect to a server": {
+  "fa": "پراکسی SOCKS روی %s در دسترس نیست. v2rayN را اجرا و به سرور وصل کنید",
+  "zh": "%s 上的 SOCKS 代理不可用。请启动 v2rayN 并连接服务器",
+  "ar": "وكيل SOCKS على %s غير متاح. شغّل v2rayN واتصل بخادم"
+ },
+ "The subscription did not contain any link": {
+  "fa": "محتوای Subscription شامل هیچ لینکی نبود",
+  "zh": "订阅中不包含任何链接",
+  "ar": "لم يحتوِ الاشتراك على أي رابط"
+ },
+ "The subscription URL must start with http:// or https://": {
+  "fa": "آدرس Subscription باید با http:// یا https:// شروع شود",
+  "zh": "订阅地址必须以 http:// 或 https:// 开头",
+  "ar": "يجب أن يبدأ رابط الاشتراك بـ http://‎ أو https://‎"
+ },
+ "The tunnel address is not ready yet; continuing": {
+  "fa": "آدرس تونل هنوز آماده نیست؛ ادامه می‌دهیم",
+  "zh": "隧道地址尚未就绪；继续",
+  "ar": "عنوان النفق غير جاهز بعد؛ نتابع"
+ },
+ "There are no servers in \"Servers\". Add a link or subscription": {
+  "fa": "هیچ سروری در «سرورها» نیست. لینک یا Subscription اضافه کنید",
+  "zh": "“服务器”中没有服务器。请添加链接或订阅",
+  "ar": "لا توجد خوادم في «الخوادم». أضف رابطًا أو اشتراكًا"
+ },
+ "There is no backup for this connection": {
+  "fa": "نسخه‌ی پشتیبانی برای این کانکشن نیست",
+  "zh": "此连接没有备份",
+  "ar": "لا توجد نسخة احتياطية لهذا الاتصال"
+ },
+ "This app is free software released under the GPL-3.0 license. The licenses of the components it uses (sing-box, Xray, Wintun…) are in the THIRD_PARTY_NOTICES.md file next to the app.": {
+  "fa": "این برنامه نرم‌افزار آزاد است و تحت مجوز GPL-3.0 منتشر می‌شود. مجوز اجزای استفاده‌شده (sing-box، Xray، Wintun و…) در فایل THIRD_PARTY_NOTICES.md کنار برنامه آمده است.",
+  "zh": "本应用为自由软件，以 GPL-3.0 许可证发布。所用组件（sing-box、Xray、Wintun…）的许可证见应用旁的 THIRD_PARTY_NOTICES.md 文件。",
+  "ar": "هذا التطبيق برنامج حر يُنشر بترخيص GPL-3.0. تراخيص المكونات المستخدمة (sing-box وXray وWintun…) موجودة في ملف THIRD_PARTY_NOTICES.md بجانب التطبيق."
+ },
+ "This profile needs a username and password": {
+  "fa": "این پروفایل نام کاربری و رمز می‌خواهد",
+  "zh": "此配置需要用户名和密码",
+  "ar": "هذا الملف الشخصي يتطلب اسم مستخدم وكلمة مرور"
+ },
+ "Time of a real request through the server": {
+  "fa": "زمان یک درخواست واقعی از طریق سرور",
+  "zh": "经由服务器完成一次真实请求的时间",
+  "ar": "زمن طلب فعلي عبر الخادم"
+ },
+ "Time to reach the server itself (without the proxy)": {
+  "fa": "زمان رسیدن به خود سرور (بدون پراکسی)",
+  "zh": "到达服务器本身的时间（不经代理）",
+  "ar": "زمن الوصول إلى الخادم نفسه (دون وكيل)"
+ },
+ "Time zone → %s (reopen your browser)": {
+  "fa": "منطقه‌ی زمانی ← %s (مرورگر را دوباره باز کنید)",
+  "zh": "时区 → %s（请重新打开浏览器）",
+  "ar": "المنطقة الزمنية ← %s (أعد فتح المتصفح)"
+ },
+ "Time zone restored to %s": {
+  "fa": "منطقه‌ی زمانی به %s برگشت",
+  "zh": "时区已恢复为 %s",
+  "ar": "أُعيدت المنطقة الزمنية إلى %s"
+ },
+ "transport %q is not supported": {
+  "fa": "transport %q پشتیبانی نمی‌شود",
+  "zh": "不支持传输方式 %q",
+  "ar": "طريقة النقل %q غير مدعومة"
+ },
+ "Tunnel disconnected and network settings restored": {
+  "fa": "تونل قطع شد و تنظیمات شبکه برگشت",
+  "zh": "隧道已断开，网络设置已恢复",
+  "ar": "انقطع النفق وأُعيدت إعدادات الشبكة"
+ },
+ "Type": {
+  "fa": "نوع",
+  "zh": "类型",
+  "ar": "النوع"
+ },
+ "Update": {
+  "fa": "به‌روزرسانی",
+  "zh": "更新",
+  "ar": "تحديث"
+ },
+ "Upload": {
+  "fa": "آپلود",
+  "zh": "上传",
+  "ar": "الرفع"
+ },
+ "Username": {
+  "fa": "نام کاربری",
+  "zh": "用户名",
+  "ar": "اسم المستخدم"
+ },
+ "Username (if required)": {
+  "fa": "نام کاربری (اگر لازم است)",
+  "zh": "用户名（如需要）",
+  "ar": "اسم المستخدم (إن لزم)"
+ },
+ "v2rayN running: %s": {
+  "fa": "v2rayN در حال اجرا: %s",
+  "zh": "v2rayN 正在运行：%s",
+  "ar": "v2rayN قيد التشغيل: %s"
+ },
+ "v2rayN settings changed: %s": {
+  "fa": "تنظیمات v2rayN عوض شد: %s",
+  "zh": "v2rayN 设置已变更：%s",
+  "ar": "تغيرت إعدادات v2rayN: %s"
+ },
+ "v2rayN SOCKS address": {
+  "fa": "آدرس SOCKS در v2rayN",
+  "zh": "v2rayN 的 SOCKS 地址",
+  "ar": "عنوان SOCKS في v2rayN"
+ },
+ "v2rayN's TUN mode is on (%s). Turn it off in v2rayN first": {
+  "fa": "حالت TUN خود v2rayN روشن است (%s). اول آن را در v2rayN خاموش کنید",
+  "zh": "v2rayN 的 TUN 模式已开启（%s）。请先在 v2rayN 中关闭",
+  "ar": "وضع TUN في v2rayN مفعّل (%s). أوقفه في v2rayN أولًا"
+ },
+ "v2tun — connected": {
+  "fa": "v2tun — وصل",
+  "zh": "v2tun — 已连接",
+  "ar": "v2tun — متصل"
+ },
+ "v2tun — offline": {
+  "fa": "v2tun — قطع",
+  "zh": "v2tun — 离线",
+  "ar": "v2tun — غير متصل"
+ },
+ "v2tun will start when you sign in to Windows": {
+  "fa": "v2tun با ورود به ویندوز اجرا می‌شود",
+  "zh": "登录 Windows 时将启动 v2tun",
+  "ar": "سيعمل v2tun عند تسجيل الدخول إلى Windows"
+ },
+ "Web IP:": {
+  "fa": "IP وب:",
+  "zh": "网页 IP：",
+  "ar": "IP الويب:"
+ },
+ "When off, closing the window keeps the app in the tray and the tunnel connected": {
+  "fa": "اگر خاموش باشد، با بستن پنجره برنامه کنار ساعت می‌ماند و تونل وصل می‌ماند",
+  "zh": "关闭此项时，关闭窗口后应用留在托盘，隧道保持连接",
+  "ar": "عند إيقافه يبقى التطبيق في شريط النظام والنفق متصلًا بعد إغلاق النافذة"
+ },
+ "When the kill switch is off, blocks IPv6 and DNS outside the tunnel": {
+  "fa": "وقتی کیل‌سوئیچ خاموش است، IPv6 و DNS بیرون از تونل را می‌بندد",
+  "zh": "断网保护关闭时，阻止隧道外的 IPv6 和 DNS",
+  "ar": "عند إيقاف مفتاح الإيقاف، يحجب IPv6 وDNS خارج النفق"
+ },
+ "While the tunnel is connected, DNS goes through the tunnel": {
+  "fa": "وقتی تونل وصل است، DNS از داخل تونل می‌رود",
+  "zh": "隧道连接时，DNS 经由隧道",
+  "ar": "أثناء اتصال النفق، يمر DNS عبر النفق"
+ },
+ "Windows proxy: %v": {
+  "fa": "پراکسی ویندوز: %v",
+  "zh": "Windows 代理：%v",
+  "ar": "وكيل Windows: %v"
+ },
+ "XHTTP is only available in the Xray core and is not supported yet": {
+  "fa": "XHTTP فقط در هسته‌ی Xray است و هنوز پشتیبانی نمی‌شود",
+  "zh": "XHTTP 仅在 Xray 核心中可用，暂不支持",
+  "ar": "XHTTP متاح فقط في نواة Xray وغير مدعوم بعد"
+ },
+ "You can also quit from the tray icon menu": {
+  "fa": "خروج کامل از منوی آیکون کنار ساعت هم ممکن است",
+  "zh": "也可以从托盘图标菜单退出",
+  "ar": "يمكنك الخروج أيضًا من قائمة أيقونة شريط النظام"
+ }
+}

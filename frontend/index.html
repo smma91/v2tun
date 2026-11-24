@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>v2tun</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <!-- Custom title bar (the window is frameless, like OpenVPN Connect / Discord / VS Code) -->
+    <header class="titlebar" id="titlebar">
+      <svg class="tb-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/></svg>
+      <span class="tb-title">v2tun</span>
+      <span id="pill" class="pill">Offline</span>
+      <span class="tb-space"></span>
+      <select id="langSel" class="tb-lang" aria-label="Language" translate="no">
+        <option value="en">EN</option>
+        <option value="fa">FA</option>
+        <option value="ar">AR</option>
+        <option value="zh">ZH</option>
+      </select>
+      <button id="winMin" class="tb-btn" aria-label="Minimize"><svg viewBox="0 0 12 12"><path d="M2 6h8"/></svg></button>
+      <button id="winClose" class="tb-btn close" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="home" class="active">Connect</button>
+      <button data-tab="servers">Servers</button>
+      <button data-tab="routing">Routing</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+
+    <!-- ===== Connection ===== -->
+    <section class="page" id="page-home">
+      <section class="hero">
+        <button id="power" class="power" aria-label="Connect">
+          <svg class="ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54"/></svg>
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v9M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+        </button>
+        <div id="stateText" class="state-text">Tap to connect</div>
+        <div id="uptime" class="uptime"></div>
+      </section>
+
+      <section id="alerts" class="alerts"></section>
+
+      <section class="card">
+        <div class="row"><span class="label">Proxy source</span><small id="activeServer" class="muted"></small></div>
+        <div class="seg two" id="sourceSeg">
+          <button data-s="builtin"><b>Built-in core</b><small>Servers in this app</small></button>
+          <button data-s="v2rayn"><b>v2rayN</b><small dir="ltr" id="socksLabel">127.0.0.1:10808</small></button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row"><span class="label">Connection mode</span><small id="proxyAddrLabel" class="muted" dir="ltr"></small></div>
+        <div class="seg two" id="modeSeg">
+          <button data-m="tun"><b>System-wide tunnel</b><small>All Windows apps</small></button>
+          <button data-m="proxy"><b>Proxy only</b><small>Local SOCKS/HTTP proxy</small></button>
+        </div>
+        <label class="toggle opt">
+          <span><b>Kill switch</b><small>If the tunnel or proxy drops, the internet stays blocked and nothing leaks</small></span>
+          <input type="checkbox" id="killSwitch" /><i></i>
+        </label>
+        <label class="toggle opt" id="leakGuardRow">
+          <span><b>IPv6 &amp; DNS leak guard</b><small>When the kill switch is off, blocks IPv6 and DNS outside the tunnel</small></span>
+          <input type="checkbox" id="leakGuard" /><i></i>
+        </label>
+        <label class="toggle opt">
+          <span><b>Match time zone</b><small>Sets the Windows time zone to the server's country</small></span>
+          <input type="checkbox" id="matchTimezone" /><i></i>
+        </label>
+        <p id="applyHint" class="hint" hidden>Changes in this section apply on the next connection</p>
+      </section>
+
+      <section class="card exit">
+        <div class="row">
+          <span class="label">Exit IP</span>
+          <button id="refreshExit" class="link" title="Update">↻</button>
+        </div>
+        <div id="exitIp" class="ip" dir="ltr">—</div>
+        <div id="exitWhere" class="muted">—</div>
+      </section>
+
+      <section class="stats">
+        <div class="stat"><span class="label">Download</span><b id="down">0</b></div>
+        <div class="stat"><span class="label">Upload</span><b id="up">0</b></div>
+        <div class="stat"><span class="label">Connections</span><b id="conns">0</b></div>
+      </section>
+
+      <section class="card">
+        <div class="row">
+          <span class="label">IP &amp; WebRTC leak test</span>
+          <button id="leakBtn" class="btn">Run test</button>
+        </div>
+        <div id="leakResult" class="leak" hidden></div>
+      </section>
+    </section>
+
+    <!-- ===== Servers ===== -->
+    <section class="page" id="page-servers" hidden>
+      <section class="card">
+        <div class="toolbar">
+          <button id="pasteBtn" class="btn">Add from clipboard</button>
+          <button id="updSubsBtn" class="btn ghost">Update</button>
+        </div>
+        <div class="toolbar tests">
+          <button id="pingBtn" class="btn ghost" title="Time to reach the server itself (without the proxy)">Ping</button>
+          <button id="testBtn" class="btn ghost" title="Time of a real request through the server">Real delay</button>
+          <button id="speedBtn" class="btn ghost" title="6-second download through each server, one at a time">Speed test</button>
+        </div>
+        <details class="sub-add">
+          <summary>Add subscription or links manually</summary>
+          <div class="field">
+            <label for="subUrl">Subscription URL</label>
+            <input id="subUrl" dir="ltr" spellcheck="false" placeholder="https://..." />
+          </div>
+          <div class="field">
+            <label for="subName">Name (optional)</label>
+            <input id="subName" spellcheck="false" />
+          </div>
+          <button id="subAdd" class="btn">Add subscription</button>
+          <div class="field" style="margin-top:12px">
+            <label for="links">Links or Clash text (vless, vmess, trojan, ss, hysteria2, tuic, wireguard, ssh, naive, anyconnect, socks…)</label>
+            <textarea id="links" dir="ltr" rows="4" spellcheck="false"></textarea>
+          </div>
+          <button id="linksAdd" class="btn ghost">Add links</button>
+        </details>
+        <details class="sub-add">
+          <summary>Add OpenVPN (.ovpn file)</summary>
+          <div class="inline">
+            <div class="field"><label for="ovpnUser">Username (if required)</label><input id="ovpnUser" dir="ltr" spellcheck="false" /></div>
+            <div class="field"><label for="ovpnPass">Password</label><input id="ovpnPass" type="password" dir="ltr" /></div>
+          </div>
+          <button id="ovpnAdd" class="btn">Choose .ovpn file</button>
+        </details>
+        <details class="sub-add">
+          <summary>Add AnyConnect / OpenConnect / Fortinet / GlobalProtect</summary>
+          <div class="field"><label for="ocServer">Server address</label><input id="ocServer" dir="ltr" spellcheck="false" placeholder="vpn.example.com" /></div>
+          <div class="inline">
+            <div class="field"><label for="ocFlavor">Type</label>
+              <select id="ocFlavor" class="select" style="margin:0">
+                <option value="anyconnect">Cisco AnyConnect / ocserv</option>
+                <option value="fortinet">Fortinet</option>
+                <option value="gp">Palo Alto GlobalProtect</option>
+                <option value="pulse">Pulse / Ivanti</option>
+                <option value="nc">Juniper Network Connect</option>
+                <option value="f5">F5 BIG-IP</option>
+              </select>
+            </div>
+            <div class="field"><label for="ocGroup">Group (optional)</label><input id="ocGroup" dir="ltr" spellcheck="false" /></div>
+          </div>
+          <div class="inline">
+            <div class="field"><label for="ocUser">Username</label><input id="ocUser" dir="ltr" spellcheck="false" /></div>
+            <div class="field"><label for="ocPass">Password</label><input id="ocPass" type="password" dir="ltr" /></div>
+          </div>
+          <button id="ocAdd" class="btn">Add</button>
+        </details>
+        <div class="opts">
+          <label class="toggle small">
+            <span><b>Auto-switch when a server fails</b></span>
+            <input type="checkbox" id="failover" /><i></i>
+          </label>
+          <div class="row">
+            <span class="muted small-text">Auto-update subscriptions</span>
+            <select id="autoHours" class="select mini">
+              <option value="0">Off</option>
+              <option value="3">Every 3 hours</option>
+              <option value="6">Every 6 hours</option>
+              <option value="12">Every 12 hours</option>
+              <option value="24">Once a day</option>
+            </select>
+          </div>
+        </div>
+      </section>
+      <div id="serverList" class="servers"></div>
+    </section>
+
+    <!-- ===== Routing ===== -->
+    <section class="page" id="page-routing" hidden>
+      <section class="card">
+        <label class="toggle">
+          <span><b>Allow QUIC / web UDP</b><small>Only if your server supports UDP; otherwise YouTube and Google are slow or do not load</small></span>
+          <input type="checkbox" id="allowQuic" /><i></i>
+        </label>
+      </section>
+
+      <section class="card split">
+        <div class="row"><b>Split tunneling</b><small class="muted">Changes apply immediately</small></div>
+
+        <h3>Apps</h3>
+        <div class="seg two" id="appMode">
+          <button data-m="exclude"><b>Everything through the tunnel, except these</b><small>Listed apps go direct</small></button>
+          <button data-m="include"><b>Only these through the tunnel</b><small>Other apps go direct</small></button>
+        </div>
+        <ul id="appList" class="list"></ul>
+        <div class="inline add">
+          <select id="appPick" class="select"></select>
+          <button id="appAdd" class="btn">Add</button>
+          <button id="appBrowse" class="btn ghost" title="Choose an .exe file">File…</button>
+        </div>
+
+        <h3>Domains &amp; IPs</h3>
+        <div class="seg two" id="domainMode">
+          <button data-m="exclude"><b>Everything through the tunnel, except these</b><small>Listed domains go direct</small></button>
+          <button data-m="include"><b>Only these through the tunnel</b><small>Other sites go direct</small></button>
+        </div>
+        <textarea id="domains" dir="ltr" spellcheck="false" rows="5" placeholder="example.com&#10;.com&#10;192.168.0.0/16"></textarea>
+        <small class="muted note">One entry per line. <span dir="ltr">example.com</span> also covers its subdomains. An empty list means everything goes through the tunnel.</small>
+      </section>
+
+      <section class="card">
+        <div class="row">
+          <span class="label">DNS of the Windows internet connection</span>
+          <button id="dnsReload" class="link" title="Update">↻</button>
+        </div>
+        <select id="adapter" class="select"></select>
+        <div id="dnsNow" class="dns-now" dir="ltr"></div>
+        <div class="seg" id="dnsSeg">
+          <button data-p="cloudflare"><b>Cloudflare</b><small dir="ltr">1.1.1.1</small></button>
+          <button data-p="google"><b>Google</b><small dir="ltr">8.8.8.8</small></button>
+          <button data-p="dhcp"><b>Automatic</b><small>DHCP</small></button>
+        </div>
+        <div class="row dns-foot">
+          <small class="muted">While the tunnel is connected, DNS goes through the tunnel</small>
+          <button id="dnsRestore" class="link text" hidden>Restore previous DNS</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- ===== Settings ===== -->
+    <section class="page" id="page-settings" hidden>
+      <section class="card">
+        <label class="toggle">
+          <span><b>Local network</b><small>Access printers and devices on your network (DNS still through the tunnel)</small></span>
+          <input type="checkbox" id="allowLan" /><i></i>
+        </label>
+        <p id="applyHint" class="hint" hidden>Changes in this section apply on the next connection</p>
+      </section>
+
+      <section class="card">
+        <div class="row"><b>Local proxy</b><small class="muted">SOCKS5 and HTTP port of the built-in core</small></div>
+        <div class="field" style="margin-top:10px">
+          <label for="proxyPort">Port</label>
+          <input id="proxyPort" type="number" min="1" max="65535" dir="ltr" />
+        </div>
+        <label class="toggle">
+          <span><b>Allow from local network</b><small>Other devices on this network (phone, laptop) can use this proxy too; it has no password</small></span>
+          <input type="checkbox" id="proxyLan" /><i></i>
+        </label>
+        <label class="toggle">
+          <span><b>Set Windows proxy</b><small>In "Proxy only" mode, browsers and apps use it automatically</small></span>
+          <input type="checkbox" id="systemProxy" /><i></i>
+        </label>
+        <div id="proxyAddrs" class="addrs" dir="ltr"></div>
+      </section>
+
+      <section class="card">
+        <label class="toggle">
+          <span><b>Start with Windows</b><small>After you sign in to Windows, v2tun starts in the tray (no administrator prompt)</small></span>
+          <input type="checkbox" id="autostart" /><i></i>
+        </label>
+        <label class="toggle">
+          <span><b>Auto-connect</b><small>Connect as soon as the network and proxy are ready when the app starts</small></span>
+          <input type="checkbox" id="autoConnect" /><i></i>
+        </label>
+        <label class="toggle">
+          <span><b>Closing the window quits</b><small>When off, closing the window keeps the app in the tray and the tunnel connected</small></span>
+          <input type="checkbox" id="exitOnClose" /><i></i>
+        </label>
+        <div class="row tray-foot">
+          <small class="muted">You can also quit from the tray icon menu</small>
+          <button id="quitBtn" class="btn ghost">Quit</button>
+        </div>
+      </section>
+
+      <details class="card">
+        <summary>Advanced settings</summary>
+        <div class="field">
+          <label for="socks">v2rayN SOCKS address</label>
+          <input id="socks" dir="ltr" spellcheck="false" />
+        </div>
+        <label class="toggle">
+          <span><b>Let the server resolve DNS (recommended)</b><small>DNS queries never leave this PC; the server looks names up in the exit country, so DNS leak tests come out clean</small></span>
+          <input type="checkbox" id="remoteDns" /><i></i>
+        </label>
+        <div class="field">
+          <label for="dns">DNS servers (inside the tunnel)</label>
+          <input id="dns" dir="ltr" spellcheck="false" placeholder="1.1.1.1, 8.8.8.8" />
+          <div class="chips">
+            <button class="chip" data-dns="1.1.1.1, 1.0.0.1">Cloudflare</button>
+            <button class="chip" data-dns="8.8.8.8, 8.8.4.4">Google</button>
+            <button class="chip" data-dns="1.1.1.1, 8.8.8.8">Both</button>
+          </div>
+        </div>
+        <div id="servers" class="muted small" dir="ltr"></div>
+      </details>
+
+      <section class="card about">
+        <div class="row"><b>v2tun</b><small class="muted" dir="ltr" id="appVersion"></small></div>
+        <small class="muted">This app is free software released under the GPL-3.0 license. The licenses of the components it uses (sing-box, Xray, Wintun…) are in the THIRD_PARTY_NOTICES.md file next to the app.</small>
+      </section>
+
+      <details class="card" id="logBox">
+        <summary>Logs</summary>
+        <div id="logs" class="logs" translate="no"></div>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

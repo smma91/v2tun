@@ -1,0 +1,63 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet and unit tests
+        shell: pwsh
+        env:
+          GOTOOLCHAIN: go1.26.11
+        run: |
+          $tags = 'desktop,production,with_quic,with_utls,with_wireguard,with_gvisor,with_naive_outbound,with_purego,with_openvpn,with_openconnect'
+          go vet -tags $tags .
+          # the resource file clashes with the test binary's own manifest
+          Rename-Item rsrc_windows_amd64.syso rsrc.syso.bak
+          go test -tags $tags -count=1 -run 'TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP' .
+          $code = $LASTEXITCODE
+          Rename-Item rsrc.syso.bak rsrc_windows_amd64.syso
+          exit $code
+
+      - name: Build
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { "0.0.0-dev+$($env:GITHUB_SHA.Substring(0, 7))" }
+          ./build.ps1 -Version $version
+          New-Item -ItemType Directory dist | Out-Null
+          Copy-Item v2tun.exe, LICENSE, THIRD_PARTY_NOTICES.md, README.md dist/
+          Compress-Archive dist/* "v2tun-$version-windows-amd64.zip"
+          (Get-FileHash v2tun.exe -Algorithm SHA256).Hash + '  v2tun.exe' | Out-File -Encoding ascii SHA256SUMS.txt
+          (Get-FileHash "v2tun-$version-windows-amd64.zip" -Algorithm SHA256).Hash + "  v2tun-$version-windows-amd64.zip" | Out-File -Encoding ascii -Append SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v2tun-windows-amd64
+          path: |
+            v2tun-*.zip
+            SHA256SUMS.txt
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            v2tun-*.zip
+            SHA256SUMS.txt
