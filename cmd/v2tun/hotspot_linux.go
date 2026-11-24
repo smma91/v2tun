@@ -39,7 +39,7 @@ func nmcli(args ...string) (string, error) {
 	return s, nil
 }
 
-func startAccessPoint(ssid, pass, dns string) (*accessPoint, error) {
+func startAccessPoint(ssid, pass, dns string, onDNS func(netip.Addr)) (*accessPoint, error) {
 	if _, err := exec.LookPath("nmcli"); err != nil {
 		return nil, trErr("The hotspot needs NetworkManager (nmcli was not found)")
 	}

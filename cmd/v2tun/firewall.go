@@ -174,11 +174,11 @@ func (k *killSwitch) add(name string, layer wf.LayerID, weight uint64, action wf
 	return nil
 }
 
-// allowHotspot lets the hotspot adapter work (DHCP and DNS from its devices
-// reach Windows' sharing service) and lets its forwarded traffic go into the
-// tunnel only: anything from the hotspot's range forwarded elsewhere is
-// blocked, so if the tunnel drops the devices have no internet, no leak.
-func (k *killSwitch) allowHotspot(apLUID uint64, subnet netip.Prefix, tunLUID uint64) error {
+// allowHotspot lets the hotspot adapter work under the kill switch: DHCP and
+// DNS from its devices reach Windows' sharing service and v2tun. (Their
+// forwarded traffic follows the routes into the tunnel; when the tunnel stops
+// v2tun turns the hotspot off, and it also ends with v2tun if v2tun is killed.)
+func (k *killSwitch) allowHotspot(apLUID uint64) error {
 	k.removeHotspot()
 	add := func(name string, layer wf.LayerID, weight uint64, action wf.Action, conds ...*wf.Match) error {
 		id := wf.RuleID(guid())
@@ -195,12 +195,7 @@ func (k *killSwitch) allowHotspot(apLUID uint64, subnet netip.Prefix, tunLUID ui
 			return err
 		}
 	}
-	from := &wf.Match{Field: wf.FieldIPSourceAddress, Op: wf.MatchTypeEqual, Value: subnet}
-	if err := add("to tunnel", wf.LayerIPForwardV4, wTunnel, wf.ActionPermit, from,
-		&wf.Match{Field: wf.FieldIPForwardInterface, Op: wf.MatchTypeEqual, Value: tunLUID}); err != nil {
-		return err
-	}
-	return add("only through tunnel", wf.LayerIPForwardV4, wBlockAll, wf.ActionBlock, from)
+	return nil
 }
 
 func (k *killSwitch) removeHotspot() {

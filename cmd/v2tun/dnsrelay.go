@@ -19,7 +19,7 @@ type dnsRelay struct {
 	tcp net.Listener
 }
 
-func startDNSRelay(listen netip.Addr, upstream string) (*dnsRelay, error) {
+func startDNSRelay(listen netip.Addr, upstream string, onQuery func(netip.Addr)) (*dnsRelay, error) {
 	u, err := net.ListenUDP("udp4", &net.UDPAddr{IP: listen.AsSlice(), Port: 53})
 	if err != nil {
 		return nil, err
@@ -29,11 +29,11 @@ func startDNSRelay(listen netip.Addr, upstream string) (*dnsRelay, error) {
 		r.tcp = l
 		go r.serveTCP(upstream)
 	}
-	go r.serveUDP(upstream)
+	go r.serveUDP(upstream, onQuery)
 	return r, nil
 }
 
-func (r *dnsRelay) serveUDP(upstream string) {
+func (r *dnsRelay) serveUDP(upstream string, onQuery func(netip.Addr)) {
 	defer recoverPanic("dns relay")
 	buf := make([]byte, 65535)
 	for {
@@ -42,6 +42,11 @@ func (r *dnsRelay) serveUDP(upstream string) {
 			return
 		}
 		q := append([]byte(nil), buf[:n]...)
+		if onQuery != nil {
+			if a, ok := netip.AddrFromSlice(from.IP.To4()); ok {
+				onQuery(a)
+			}
+		}
 		go func() {
 			defer recoverPanic("dns relay")
 			c, err := net.Dial("udp4", upstream)

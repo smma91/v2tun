@@ -70,7 +70,7 @@ type accessPoint struct {
 	dns    *dnsRelay
 }
 
-func startAccessPoint(ssid, pass, dns string) (*accessPoint, error) {
+func startAccessPoint(ssid, pass, dns string, onDNS func(netip.Addr)) (*accessPoint, error) {
 	if len(pass) < 8 || len(pass) > 63 {
 		return nil, trErr("The hotspot password must have 8 to 63 characters")
 	}
@@ -130,7 +130,7 @@ func startAccessPoint(ssid, pass, dns string) (*accessPoint, error) {
 		ap.Close()
 		return nil, err
 	}
-	if ap.dns, err = startDNSRelay(ap.addr, dns); err != nil {
+	if ap.dns, err = startDNSRelay(ap.addr, dns, onDNS); err != nil {
 		ap.Close()
 		return nil, fmt.Errorf("DNS: %w", err)
 	}
@@ -251,7 +251,7 @@ func (e *Engine) routeHotspot(ap *accessPoint) error {
 		}
 	}
 	if e.ks != nil {
-		if err := e.ks.allowHotspot(ap.luid, ap.subnet, e.dev.LUID()); err != nil {
+		if err := e.ks.allowHotspot(ap.luid); err != nil {
 			return err
 		}
 	}

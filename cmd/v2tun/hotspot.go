@@ -42,7 +42,13 @@ func (h *hotspotManager) Start(s Settings, e *Engine, logf func(string, string, 
 	h.mu.Unlock()
 	go func() {
 		defer recoverPanic("hotspot")
-		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass, hotspotDNS(s))
+		var seen sync.Map
+		onDNS := func(dev netip.Addr) { // first DNS question of each device: it reached v2tun
+			if _, ok := seen.LoadOrStore(dev, true); !ok {
+				logf("info", "Hotspot device %s asks DNS through v2tun", dev)
+			}
+		}
+		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass, hotspotDNS(s), onDNS)
 		if err == nil {
 			if err = e.routeHotspot(ap); err != nil {
 				ap.Close()

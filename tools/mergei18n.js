@@ -10,7 +10,7 @@ const dict = JSON.parse(fs.readFileSync(file, "utf8"));
 const extra = path.join(__dirname, "tr-extra.json");
 const verbs = (s) => (s.match(/%[.\d]*[a-z]|\{\d\}/g) || []).sort().join(",");
 if (fs.existsSync(extra)) {
-  for (const [en, fa, zh, ar] of JSON.parse(fs.readFileSync(extra, "utf8"))) {
+  for (const [en, fa, zh, ar] of JSON.parse(fs.readFileSync(extra, "utf8").replace(/^\uFEFF/, ""))) {
     for (const v of [fa, zh, ar]) if (verbs(v) !== verbs(en)) throw new Error(`placeholders differ: ${en} -> ${v}`);
     dict[en] = { fa, zh, ar };
   }
