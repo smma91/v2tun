@@ -84,11 +84,11 @@ func draw(size int) []byte {
 }
 
 func main() {
-	writeICO("app.ico", blue, []int{16, 24, 32, 48, 64, 256})
+	writeICO("build/windows/app.ico", blue, []int{16, 24, 32, 48, 64, 256})
 	writeICO("tray_on.ico", green, []int{16, 20, 24, 32, 48})
 	writeICO("tray_off.ico", gray, []int{16, 20, 24, 32, 48})
 	cur = blue
-	png.Encode(must(os.Create("frontend/icon.png")), decode(draw(256)))
+	png.Encode(must(os.Create("cmd/v2tun/frontend/icon.png")), decode(draw(256)))
 }
 
 func writeICO(name string, p palette, sizes []int) {

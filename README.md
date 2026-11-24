@@ -1,6 +1,6 @@
 # v2tun
 
-**English** | [فارسی](README.fa.md) | [العربية](README.ar.md) | [中文](README.zh.md)
+**English** | [فارسی](docs/README.fa.md) | [العربية](docs/README.ar.md) | [中文](docs/README.zh.md)
 
 A system-wide tunnel for Windows with a kill switch. v2tun sends the traffic of
 every app on the PC through a proxy, using either its own built-in core
@@ -8,9 +8,9 @@ every app on the PC through a proxy, using either its own built-in core
 [v2rayN](https://github.com/2dust/v2rayN).
 
 <p align="center">
-  <img src="screenshots/connect.png" width="260" alt="Connect">
-  <img src="screenshots/servers.png" width="260" alt="Servers">
-  <img src="screenshots/settings.png" width="260" alt="Settings">
+  <img src="docs/screenshots/connect.png" width="260" alt="Connect">
+  <img src="docs/screenshots/servers.png" width="260" alt="Servers">
+  <img src="docs/screenshots/settings.png" width="260" alt="Settings">
 </p>
 
 ## Features
@@ -88,40 +88,45 @@ embedded in it.
 
 ```powershell
 $tags = 'desktop,production,with_quic,with_utls,with_wireguard,with_gvisor,with_naive_outbound,with_purego,with_openvpn,with_openconnect'
-Rename-Item rsrc_windows_amd64.syso rsrc.syso.bak   # the icon resource clashes with test binaries
-go test -tags $tags -run 'TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip' .
-Rename-Item rsrc.syso.bak rsrc_windows_amd64.syso
+Rename-Item cmd/v2tun/rsrc_windows_amd64.syso rsrc.syso.bak   # the icon resource clashes with test binaries
+go test -tags $tags -run 'TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip' ./cmd/v2tun
+Rename-Item cmd/v2tun/rsrc.syso.bak rsrc_windows_amd64.syso
 ```
 
 End-to-end tests that really bring the tunnel up (as Administrator, with
 `V2TUN_E2E=1`) and the manual release checklist are described in
-[TESTING.md](TESTING.md).
+[docs/TESTING.md](docs/TESTING.md).
 
 ### Translations
 
 All text in the code is English and is translated through
-[`frontend/i18n.json`](frontend/i18n.json). `node tools/extract.js` lists
+[`cmd/v2tun/frontend/i18n.json`](cmd/v2tun/frontend/i18n.json). `node tools/extract.js` lists
 strings that have no translation yet; add them to `tools/tr-extra.json`
 (`[["English", "Persian", "Chinese", "Arabic"], …]`) and run
 `node tools/mergei18n.js`.
 
 ## Project layout
 
-| Path | Purpose |
-|---|---|
-| `main.go`, `app.go`, `tray.go` | Wails app, UI bindings, tray icon |
-| `engine.go`, `handler.go`, `dialer.go` | TUN tunnel (tun2socks / gVisor), routing of each connection |
-| `firewall.go` | Kill switch and leak guard (WFP) |
-| `fakeip.go`, `dnstcp.go`, `dnsmap.go`, `sysdns.go` | DNS handling |
-| `core.go`, `xraycore.go`, `servers.go`, `links.go`, `clash.go`, `ovpn.go` | Built-in core, server list, link and subscription parsing |
-| `rules.go`, `sniff.go` | Split tunneling |
-| `watchdog.go`, `hosts.go`, `timezone.go`, `sysproxy_windows.go` | System changes and their restoration |
-| `frontend/` | UI (plain HTML / CSS / JS) and translations |
-| `tools/` | Icon generator, translation and license-notice helpers |
+```
+cmd/v2tun/            the application (Go, package main)
+  ├─ frontend/        UI (plain HTML / CSS / JS) and translations (i18n.json)
+  └─ assets/          embedded files: wintun.dll, libcronet.dll, tray icons
+build/windows/        app icon and manifest for the Windows resource
+docs/                 test checklist, release guide, translations of this README, screenshots
+tools/                icon generator, translation and license-notice helpers
+.github/              CI build / release workflow, issue templates
+```
+
+Inside `cmd/v2tun`: `engine.go` / `handler.go` / `dialer.go` (tunnel and
+per-connection routing), `firewall.go` (kill switch, WFP), `fakeip.go` /
+`dnstcp.go` / `sysdns.go` (DNS), `core.go` / `servers.go` / `links.go` /
+`clash.go` / `ovpn.go` (built-in core and server parsing), `rules.go`
+(split tunneling), `watchdog.go` / `hosts.go` / `timezone.go` /
+`sysproxy_windows.go` (system changes and their restoration).
 
 ## Releasing
 
-See [RELEASE.md](RELEASE.md). Pushing a tag such as `v1.0.0` makes the GitHub
+See [docs/RELEASE.md](docs/RELEASE.md). Pushing a tag such as `v1.0.0` makes the GitHub
 Actions workflow build the exe and create a draft release with the zip and
 checksums.
 

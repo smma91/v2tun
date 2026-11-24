@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const file = path.join(__dirname, "..", "frontend", "i18n.json");
+const file = path.join(__dirname, "..", "cmd", "v2tun", "frontend", "i18n.json");
 const dict = JSON.parse(fs.readFileSync(file, "utf8"));
 const extra = path.join(__dirname, "tr-extra.json");
 const verbs = (s) => (s.match(/%[.\d]*[a-z]|\{\d\}/g) || []).sort().join(",");

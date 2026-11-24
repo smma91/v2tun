@@ -2,7 +2,7 @@
 
 # v2tun
 
-[English](README.md) | [فارسی](README.fa.md) | **العربية** | [中文](README.zh.md)
+[English](../README.md) | [فارسی](README.fa.md) | **العربية** | [中文](README.zh.md)
 
 نفق شامل لنظام Windows مع مفتاح إيقاف (Kill Switch). يمرّر v2tun حركة جميع التطبيقات على الحاسوب عبر وكيل (Proxy)، إما بنواته المدمجة (الخوادم والاشتراكات داخل التطبيق) أو عبر منفذ SOCKS لبرنامج [v2rayN](https://github.com/2dust/v2rayN) أثناء تشغيله.
 
@@ -44,7 +44,7 @@
 
 ## التثبيت
 
-1. نزّل `v2tun-<version>-windows-amd64.zip` من [Releases](../../releases) وتحقق منه عبر `SHA256SUMS.txt`.
+1. نزّل `v2tun-<version>-windows-amd64.zip` من [Releases](https://github.com/smma91/v2tun/releases) وتحقق منه عبر `SHA256SUMS.txt`.
 2. فك الضغط في أي مجلد وشغّل `v2tun.exe` (يطلب صلاحيات المسؤول).
 3. أضف خوادم من تبويب **الخوادم** (الصق رابطًا أو اشتراكًا)، أو اختر **v2rayN** مصدرًا للوكيل أثناء تشغيله.
 4. اضغط زر التشغيل.
@@ -67,15 +67,15 @@ cd v2tun
 
 </div>
 
-الناتج ملف واحد `v2tun.exe` يتضمن `wintun.dll` و`libcronet.dll`. تفاصيل الاختبارات والترجمة في [README الإنجليزي](README.md).
+الناتج ملف واحد `v2tun.exe` يتضمن `wintun.dll` و`libcronet.dll`. تفاصيل الاختبارات والترجمة في [README الإنجليزي](../README.md).
 
 ## الملاحظات والمشاكل
 
-وجدت خطأً أو لديك فكرة؟ [افتح Issue](../../issues/new/choose). احذف عناوين الخوادم وكلمات المرور وروابط الاشتراك من السجلات قبل نشرها. لا تُقبل طلبات الدمج (Pull Requests) حاليًا.
+وجدت خطأً أو لديك فكرة؟ [افتح Issue](https://github.com/smma91/v2tun/issues/new/choose). احذف عناوين الخوادم وكلمات المرور وروابط الاشتراك من السجلات قبل نشرها. لا تُقبل طلبات الدمج (Pull Requests) حاليًا.
 
 ## الترخيص
 
-يُوزَّع v2tun بموجب [GNU General Public License v3.0](LICENSE) لأنه يتضمن sing-box ومكتبات أخرى مرخصة بـ GPL. المكونات الخارجية وتراخيصها مذكورة في [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+يُوزَّع v2tun بموجب [GNU General Public License v3.0](../LICENSE) لأنه يتضمن sing-box ومكتبات أخرى مرخصة بـ GPL. المكونات الخارجية وتراخيصها مذكورة في [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 يُقدَّم هذا البرنامج «كما هو» دون أي ضمان. أنت مسؤول عن استخدامه وفق قوانين بلدك وشروط مزوّد الوكيل.
 

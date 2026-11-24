@@ -11,10 +11,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-//go:embed tray_on.ico
+//go:embed assets/tray_on.ico
 var trayIconOn []byte
 
-//go:embed tray_off.ico
+//go:embed assets/tray_off.ico
 var trayIconOff []byte
 
 // startTray runs the notification-area icon on its own OS thread (the tray

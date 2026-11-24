@@ -14,13 +14,13 @@ import (
 	"golang.zx2c4.com/wireguard/tun"
 )
 
-//go:embed wintun.dll
+//go:embed assets/wintun.dll
 var wintunDLL []byte
 
 // libcronet.dll is Chromium's network stack, used by the NaiveProxy protocol
 // (sing-box loads it at runtime, so no C compiler is needed to build).
 //
-//go:embed libcronet.dll
+//go:embed assets/libcronet.dll
 var cronetDLL []byte
 
 // placeDLL writes an embedded DLL next to the exe, where its loader looks.

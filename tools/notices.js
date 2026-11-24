@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
 const tags = process.argv[2] || "";
-const out = execSync(`go list -deps -tags "${tags}" -f "{{with .Module}}{{.Path}}|{{.Version}}|{{.Dir}}{{end}}" .`, { cwd: root, maxBuffer: 64 << 20 }).toString();
+const out = execSync(`go list -deps -tags "${tags}" -f "{{with .Module}}{{.Path}}|{{.Version}}|{{.Dir}}{{end}}" ./cmd/v2tun`, { cwd: root, maxBuffer: 64 << 20 }).toString();
 const mods = new Map();
 for (const l of out.split(/\r?\n/)) {
   const [p, v, d] = l.split("|");

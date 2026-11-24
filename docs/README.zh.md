@@ -1,6 +1,6 @@
 # v2tun
 
-[English](README.md) | [فارسی](README.fa.md) | [العربية](README.ar.md) | **中文**
+[English](../README.md) | [فارسی](README.fa.md) | [العربية](README.ar.md) | **中文**
 
 带断网保护（Kill Switch）的 Windows 全局隧道。v2tun 让电脑上所有应用的流量都经过代理：可以使用内置核心（在应用内管理服务器和订阅），也可以使用正在运行的 [v2rayN](https://github.com/2dust/v2rayN) 的 SOCKS 端口。
 
@@ -42,7 +42,7 @@
 
 ## 安装
 
-1. 从 [Releases](../../releases) 下载 `v2tun-<version>-windows-amd64.zip`，并用 `SHA256SUMS.txt` 校验。
+1. 从 [Releases](https://github.com/smma91/v2tun/releases) 下载 `v2tun-<version>-windows-amd64.zip`，并用 `SHA256SUMS.txt` 校验。
 2. 解压到任意位置，运行 `v2tun.exe`（会请求管理员权限）。
 3. 在 **服务器** 页添加服务器（粘贴链接或订阅），或在 v2rayN 运行时选择 **v2rayN** 作为代理来源。
 4. 点击电源按钮。
@@ -61,14 +61,14 @@ cd v2tun
 .\build.ps1                 # 或：.\build.ps1 -Version 1.0.0
 ```
 
-生成单个 `v2tun.exe`，`wintun.dll` 和 `libcronet.dll` 已内嵌其中。测试与翻译说明见 [英文 README](README.md)。
+生成单个 `v2tun.exe`，`wintun.dll` 和 `libcronet.dll` 已内嵌其中。测试与翻译说明见 [英文 README](../README.md)。
 
 ## 反馈
 
-发现问题或有建议？请 [提交 Issue](../../issues/new/choose)。粘贴日志前请删除服务器地址、密码和订阅链接。目前不接受 Pull Request。
+发现问题或有建议？请 [提交 Issue](https://github.com/smma91/v2tun/issues/new/choose)。粘贴日志前请删除服务器地址、密码和订阅链接。目前不接受 Pull Request。
 
 ## 许可证
 
-由于包含 sing-box 及其他 GPL 授权的库，v2tun 以 [GNU General Public License v3.0](LICENSE) 发布。第三方组件及其许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+由于包含 sing-box 及其他 GPL 授权的库，v2tun 以 [GNU General Public License v3.0](../LICENSE) 发布。第三方组件及其许可证见 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)。
 
 本软件按“原样”提供，不附带任何担保。请遵守你所在国家的法律以及代理服务商的条款。

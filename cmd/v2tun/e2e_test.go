@@ -196,7 +196,7 @@ func TestE2EKilledWhileConnected(t *testing.T) {
 		time.Sleep(10 * time.Minute)
 		return
 	}
-	exe, _ := filepath.Abs("v2tun.exe")
+	exe, _ := filepath.Abs(filepath.Join("..", "..", "v2tun.exe"))
 	if _, err := os.Stat(exe); err != nil {
 		t.Skip("build v2tun.exe first")
 	}

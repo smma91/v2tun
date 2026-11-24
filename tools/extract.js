@@ -5,7 +5,7 @@
 //        node tools/extract.js unused   -> dictionary keys no longer used
 const fs = require("fs");
 const path = require("path");
-const root = path.join(__dirname, "..");
+const root = path.join(__dirname, "..", "cmd", "v2tun");
 const entities = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" };
 const norm = (s) => s.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => entities[e]).replace(/\s+/g, " ").trim();
 const out = new Set();

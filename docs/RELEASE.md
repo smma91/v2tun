@@ -13,7 +13,7 @@ v2tun as a whole is distributed under GPL-3.0 (`LICENSE`). For every release:
 
 ## 2. Version
 
-Set it at build time: `.\build.ps1 -Version 1.0.0` (default in `app.go`:
+Set it at build time: `.\build.ps1 -Version 1.0.0` (default in `cmd/v2tun/app.go`:
 `0.9.0-beta`).
 
 Easiest: push a tag. `git tag v1.0.0; git push origin v1.0.0` makes the

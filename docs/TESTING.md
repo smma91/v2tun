@@ -11,7 +11,7 @@ required; they change the firewall and routes and restore them):
 
 ```powershell
 $env:V2TUN_E2E = '1'
-go test -tags "<tags from build.ps1>" -run TestE2E -v .
+go test -tags "<tags from build.ps1>" -run TestE2E -v ./cmd/v2tun
 ```
 
 ## 1. Basic connection
