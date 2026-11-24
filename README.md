@@ -43,6 +43,9 @@ of a running [v2rayN](https://github.com/2dust/v2rayN).
 - Local proxy: SOCKS5 + HTTP on one configurable port, optionally reachable
   from the local network, and a "Proxy only" mode that sets the system proxy
   instead of creating a tunnel.
+- Wi-Fi hotspot: phones and laptops that join it use the tunnel too, with the
+  same kill switch (no internet for them if the tunnel drops). Works without
+  Windows' Mobile Hotspot settings (Wi-Fi Direct); on Linux via NetworkManager.
 - Split tunneling by app and by domain / IP range, in "exclude" or "include"
   mode.
 - Tray icon, start at login (no password / UAC prompt), auto-connect.

@@ -51,6 +51,16 @@ sudo V2TUN_E2E=1 V2TUN_DATADIR=/path/with/servers.json V2TUN_E2E_EXE=/opt/v2tun/
 - [ ] Hard reset of Windows while connected, then start v2tun: everything is clean.
 - [ ] Same in "Proxy only" mode: the Windows proxy setting is restored.
 
+## 3b. Hotspot
+
+- [ ] Turn on "Wi-Fi hotspot" while connected: a phone joins it, gets an
+      address, and browserleaks shows the server's IP and DNS on the phone.
+- [ ] Disconnect v2tun (and, separately, end it in Task Manager): the phone
+      loses internet instead of using the real connection.
+- [ ] Change the hotspot name / password while on: it restarts with them.
+- [ ] Linux: the same with NetworkManager (`sudo nft list tables` shows
+      `v2tun_hotspot` while on, nothing after).
+
 ## 4. Network and sleep
 
 - [ ] While connected, switch from Wi-Fi to LAN (or a phone hotspot): the connection continues.

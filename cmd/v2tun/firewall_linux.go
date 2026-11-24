@@ -206,4 +206,5 @@ func cleanupNetwork() {
 		deleteTable(c, nftables.TableFamilyINet, ksTable)
 		deleteTable(c, nftables.TableFamilyIPv4, dnsTable)
 	}
+	cleanupHotspot()
 }

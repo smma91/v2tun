@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -38,6 +39,12 @@ type Settings struct {
 	// DNS servers above, through the tunnel. Default: the server resolves.
 	LocalDNS    bool `json:"localDns"`
 	ExitOnClose bool `json:"exitOnClose"` // false: closing the window keeps running in the tray
+
+	// Wi-Fi hotspot that shares the tunnel with other devices (phones, …)
+	// while connected in tunnel mode.
+	Hotspot     bool   `json:"hotspot"`
+	HotspotSSID string `json:"hotspotSsid"`
+	HotspotPass string `json:"hotspotPass"`
 
 	// Split tunnel (see rules.go): mode is "exclude" or "include".
 	AppMode    string   `json:"appMode"`
@@ -98,6 +105,9 @@ func loadSettings() Settings {
 		s.DomainMode = modeExclude
 	}
 	normalizeProxy(&s)
+	if hotspotDefaults(&s) && os.Getenv("V2TUN_DATADIR") == "" {
+		saveSettings(s)
+	}
 	return s
 }
 
@@ -110,6 +120,28 @@ func normalizeProxy(s *Settings) {
 	if s.ProxyPort < 1 || s.ProxyPort > 65535 {
 		s.ProxyPort = defaultProxyPort
 	}
+}
+
+// hotspotDefaults generates the hotspot name and password once (the user can
+// change them). Reports whether something was generated.
+func hotspotDefaults(s *Settings) bool {
+	gen := s.HotspotSSID == "" || len(s.HotspotPass) < 8
+	if s.HotspotSSID == "" {
+		s.HotspotSSID = "v2tun-" + randomString(4, "ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+	}
+	if len(s.HotspotPass) < 8 {
+		s.HotspotPass = randomString(10, "abcdefghjkmnpqrstuvwxyz23456789")
+	}
+	return gen
+}
+
+func randomString(n int, alphabet string) string {
+	b := make([]byte, n)
+	rand.Read(b)
+	for i := range b {
+		b[i] = alphabet[int(b[i])%len(alphabet)]
+	}
+	return string(b)
 }
 
 func saveSettings(s Settings) error {

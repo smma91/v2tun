@@ -29,15 +29,16 @@ type Engine struct {
 	logf     func(level, format string, args ...any)
 	onUplink func(uplink) // the real network changed (the embedded core must rebind)
 
-	mu      sync.Mutex
-	running bool
-	dev     *tunDevice
-	stk     *stack.Stack
-	ks      *killSwitch
-	dialer  *routerDialer
-	handler *handler
-	cancel  context.CancelFunc
-	tz      *tzManager
+	mu       sync.Mutex
+	running  bool
+	dev      *tunDevice
+	tunIndex uint32 // interface index of the tunnel
+	stk      *stack.Stack
+	ks       *killSwitch
+	dialer   *routerDialer
+	handler  *handler
+	cancel   context.CancelFunc
+	tz       *tzManager
 
 	settings Settings
 	since    time.Time
@@ -141,6 +142,7 @@ func (e *Engine) Start(s Settings) (err error) {
 		return err
 	}
 	cleanup = append(cleanup, func() { e.unconfigureTun() })
+	e.tunIndex = idx
 
 	socks, err := socks5.New(s.SocksAddr, "", "")
 	if err != nil {

@@ -30,6 +30,7 @@ type killSwitch struct {
 	s        *wf.Session
 	provider wf.ProviderID
 	sublayer wf.SublayerID
+	hotspot  []wf.RuleID // rules of an active hotspot
 }
 
 func guid() windows.GUID {
@@ -171,6 +172,42 @@ func (k *killSwitch) add(name string, layer wf.LayerID, weight uint64, action wf
 		return fmt.Errorf("rule %q: %w", name, err)
 	}
 	return nil
+}
+
+// allowHotspot lets the hotspot adapter work (DHCP and DNS from its devices
+// reach Windows' sharing service) and lets its forwarded traffic go into the
+// tunnel only: anything from the hotspot's range forwarded elsewhere is
+// blocked, so if the tunnel drops the devices have no internet, no leak.
+func (k *killSwitch) allowHotspot(apLUID uint64, subnet netip.Prefix, tunLUID uint64) error {
+	k.removeHotspot()
+	add := func(name string, layer wf.LayerID, weight uint64, action wf.Action, conds ...*wf.Match) error {
+		id := wf.RuleID(guid())
+		if err := k.s.AddRule(&wf.Rule{ID: id, Name: "v2tun: hotspot " + name, Layer: layer, Sublayer: k.sublayer,
+			Provider: k.provider, Weight: weight, Conditions: conds, Action: action}); err != nil {
+			return fmt.Errorf("rule %q: %w", name, err)
+		}
+		k.hotspot = append(k.hotspot, id)
+		return nil
+	}
+	for _, l := range allLayers {
+		if err := add("adapter", l, wTunnel, wf.ActionPermit,
+			&wf.Match{Field: wf.FieldIPLocalInterface, Op: wf.MatchTypeEqual, Value: apLUID}); err != nil {
+			return err
+		}
+	}
+	from := &wf.Match{Field: wf.FieldIPSourceAddress, Op: wf.MatchTypeEqual, Value: subnet}
+	if err := add("to tunnel", wf.LayerIPForwardV4, wTunnel, wf.ActionPermit, from,
+		&wf.Match{Field: wf.FieldIPForwardInterface, Op: wf.MatchTypeEqual, Value: tunLUID}); err != nil {
+		return err
+	}
+	return add("only through tunnel", wf.LayerIPForwardV4, wBlockAll, wf.ActionBlock, from)
+}
+
+func (k *killSwitch) removeHotspot() {
+	for _, id := range k.hotspot {
+		k.s.DeleteRule(id)
+	}
+	k.hotspot = nil
 }
 
 func (k *killSwitch) Close() {

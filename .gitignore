@@ -2,6 +2,8 @@
 *.exe
 /v2tun
 /libcronet.so
+/wintun.dll
+/libcronet.dll
 /dist/
 /.gotmp/
 

@@ -99,7 +99,28 @@ function duration(sec) {
   return [h, m, s].map((x) => String(x).padStart(2, "0")).join(":");
 }
 
+// ---- Wi-Fi hotspot ----
+function renderHotspot() {
+  const h = status.hotspot || {};
+  const tunnelUp = status.running && !status.proxyMode;
+  let text = "";
+  if (!settings?.hotspot) text = "";
+  else if (h.error) text = t("Hotspot: {0}", h.error);
+  else if (h.on) text = t("Hotspot \"{0}\" is on · {1} devices", h.ssid, num(h.clients || 0));
+  else if (tunnelUp) text = t("Starting the hotspot…");
+  else if (status.proxyMode) text = t("The hotspot works with \"System-wide tunnel\" only");
+  else text = t("The hotspot starts when you connect");
+  $("hotspotState").textContent = text;
+  const line = $("hotspotLine");
+  line.hidden = !(settings?.hotspot && tunnelUp && (h.on || h.error));
+  line.textContent = text;
+  line.classList.toggle("bad", !!h.error);
+  const pass = $("hotspotPass").value;
+  $("hotspotPass").classList.toggle("invalid", pass.length > 0 && pass.length < 8);
+}
+
 function render() {
+  renderHotspot();
   const on = status.running, busy = connecting || status.busy;
   const power = $("power");
   power.classList.toggle("on", on && !busy);
@@ -361,6 +382,9 @@ function fillSettings() {
   $("proxyPort").value = settings.proxyPort;
   $("proxyLan").checked = settings.proxyLan;
   $("systemProxy").checked = settings.systemProxy;
+  $("hotspot").checked = settings.hotspot;
+  $("hotspotSsid").value = settings.hotspotSsid || "";
+  $("hotspotPass").value = settings.hotspotPass || "";
   $("leakGuard").checked = !settings.disableLeakGuard;
   $("remoteDns").checked = !settings.localDns;
   renderMode();
@@ -426,6 +450,9 @@ async function save() {
     proxyPort: Math.min(65535, Math.max(1, parseInt($("proxyPort").value, 10) || 2080)),
     proxyLan: $("proxyLan").checked,
     systemProxy: $("systemProxy").checked,
+    hotspot: $("hotspot").checked,
+    hotspotSsid: $("hotspotSsid").value.trim(),
+    hotspotPass: $("hotspotPass").value,
     disableLeakGuard: !$("leakGuard").checked,
     localDns: !$("remoteDns").checked,
     domains: $("domains").value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
@@ -581,7 +608,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   $("power").addEventListener("click", toggle);
   $("leakBtn").addEventListener("click", leak);
   $("refreshExit").addEventListener("click", async () => { status.exit = await api().RefreshExit(); render(); });
-  ["killSwitch", "leakGuard", "allowLan", "matchTimezone", "autoConnect", "exitOnClose", "allowQuic", "proxyLan", "systemProxy", "proxyPort", "remoteDns"].forEach((id) => $(id).addEventListener("change", save));
+  ["killSwitch", "leakGuard", "allowLan", "matchTimezone", "autoConnect", "exitOnClose", "allowQuic", "proxyLan", "systemProxy", "proxyPort", "remoteDns", "hotspot", "hotspotSsid", "hotspotPass"].forEach((id) => $(id).addEventListener("change", save));
 
   // tabs, proxy source, window buttons
   document.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));

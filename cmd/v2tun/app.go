@@ -29,14 +29,15 @@ type LogLine struct {
 
 type Status struct {
 	EngineInfo
-	Exit        ExitInfo `json:"exit"`
-	Conflict    string   `json:"conflict"`
-	SocksOK     bool     `json:"socksOk"`
-	V2rayNFound bool     `json:"v2rayNFound"`
-	UpRate      int64    `json:"upRate"`
-	DownRate    int64    `json:"downRate"`
-	Busy        bool     `json:"busy"`
-	ProxyMode   bool     `json:"proxyMode"` // connected in "proxy only" mode
+	Exit        ExitInfo    `json:"exit"`
+	Conflict    string      `json:"conflict"`
+	SocksOK     bool        `json:"socksOk"`
+	V2rayNFound bool        `json:"v2rayNFound"`
+	UpRate      int64       `json:"upRate"`
+	DownRate    int64       `json:"downRate"`
+	Busy        bool        `json:"busy"`
+	ProxyMode   bool        `json:"proxyMode"` // connected in "proxy only" mode
+	Hotspot     HotspotInfo `json:"hotspot"`
 }
 
 type App struct {
@@ -62,6 +63,8 @@ type App struct {
 	quitting  bool
 	autostart bool
 	launched  bool // started by Windows at logon
+
+	hotspot hotspotManager
 
 	db   *serverDB    // servers & subscriptions of the embedded core
 	core *coreManager // embedded sing-box core
@@ -140,6 +143,7 @@ func (a *App) beforeClose(ctx context.Context) bool {
 	quitting, exit := a.quitting, a.settings.ExitOnClose
 	a.mu.Unlock()
 	if quitting || exit {
+		a.hotspot.Stop(a.engine)
 		a.engine.Stop()
 		a.stopProxyMode()
 		return false
@@ -217,6 +221,7 @@ func (a *App) GrantPermission() error {
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	a.hotspot.Stop(a.engine)
 	a.engine.Stop()
 	a.stopProxyMode()
 	a.core.Stop()
@@ -254,6 +259,7 @@ func (a *App) GetSettings() Settings {
 }
 
 func (a *App) SaveSettings(s Settings) error {
+	hotspotDefaults(&s) // an emptied name or a too short password: back to generated ones
 	if s.ProxySource != "builtin" {
 		s.ProxySource = "v2rayn"
 	}
@@ -281,6 +287,15 @@ func (a *App) SaveSettings(s Settings) error {
 			}
 			a.emitServers()
 		}()
+	}
+	// Hotspot turned on/off or renamed while the tunnel is up: apply now.
+	if a.engine.Running() && (old.Hotspot != s.Hotspot || old.HotspotSSID != s.HotspotSSID || old.HotspotPass != s.HotspotPass) {
+		if s.Hotspot {
+			a.hotspot.Start(s, a.engine, a.logf)
+		} else {
+			a.hotspot.Stop(a.engine)
+			a.logf("info", "Hotspot turned off")
+		}
 	}
 	return saveSettings(s)
 }
@@ -332,6 +347,9 @@ func (a *App) Connect() error {
 		a.logf("error", "%v", err)
 		return err
 	}
+	if s.Hotspot {
+		a.hotspot.Start(s, a.engine, a.logf)
+	}
 	go a.RefreshExit()
 	return nil
 }
@@ -340,6 +358,7 @@ func (a *App) Disconnect() {
 	a.mu.Lock()
 	a.busy = true
 	a.mu.Unlock()
+	a.hotspot.Stop(a.engine)
 	a.engine.Stop()
 	a.stopProxyMode()
 	a.mu.Lock()
@@ -520,6 +539,7 @@ func (a *App) Status() Status {
 		a.lastUp, a.lastDown, a.upRate, a.downRate = 0, 0, 0, 0
 	}
 	st.UpRate, st.DownRate = a.upRate, a.downRate
+	st.Hotspot = a.hotspot.Info()
 	if a.proxyOn { // "proxy only": no tunnel statistics, but it is connected
 		st.Running, st.Since, st.ProxyMode = true, a.proxySince.Unix(), true
 	}

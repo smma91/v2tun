@@ -40,6 +40,7 @@
         </button>
         <div id="stateText" class="state-text">Tap to connect</div>
         <div id="uptime" class="uptime"></div>
+        <div id="hotspotLine" class="hotspot-line" hidden></div>
       </section>
 
       <section id="alerts" class="alerts"></section>
@@ -253,6 +254,24 @@
           <input type="checkbox" id="systemProxy" /><i></i>
         </label>
         <div id="proxyAddrs" class="addrs" dir="ltr"></div>
+      </section>
+
+      <section class="card">
+        <label class="toggle">
+          <span><b>Wi-Fi hotspot</b><small>Phones and laptops that join this Wi-Fi use the tunnel too. Wi-Fi must be on (it does not need to be connected). If the tunnel drops, they have no internet: nothing leaks.</small></span>
+          <input type="checkbox" id="hotspot" /><i></i>
+        </label>
+        <div class="grid2">
+          <div class="field">
+            <label for="hotspotSsid">Network name</label>
+            <input id="hotspotSsid" dir="ltr" maxlength="32" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label for="hotspotPass">Password</label>
+            <input id="hotspotPass" dir="ltr" maxlength="63" spellcheck="false" />
+          </div>
+        </div>
+        <small id="hotspotState" class="muted note"></small>
       </section>
 
       <section class="card">

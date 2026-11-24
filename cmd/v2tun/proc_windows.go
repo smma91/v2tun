@@ -88,6 +88,28 @@ func udpOwner(port uint16) uint32 {
 	return 0
 }
 
+// udpListening: some program listens on addr:port (or on all addresses).
+func udpListening(addr netip.Addr, port uint16) bool {
+	buf := extendedTable(procGetExtendedUdpTable, udpTableOwnerPid)
+	if len(buf) < 4 {
+		return false
+	}
+	n := int(binary.LittleEndian.Uint32(buf))
+	want := addr.As4()
+	for i := 0; i < n; i++ {
+		row := buf[4+i*12:]
+		if len(row) < 12 {
+			break
+		}
+		if netPort(binary.LittleEndian.Uint32(row[4:])) == port {
+			if la := [4]byte(row[:4]); la == want || la == [4]byte{} {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 type pidEntry struct {
 	path string
 	at   time.Time

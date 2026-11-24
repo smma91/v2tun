@@ -49,6 +49,7 @@ func (a *App) quit() {
 	a.mu.Lock()
 	a.quitting = true
 	a.mu.Unlock()
+	a.hotspot.Stop(a.engine)
 	a.engine.Stop()
 	a.stopProxyMode()
 	systray.Quit()
