@@ -41,10 +41,18 @@ type handler struct {
 	hotspotSeen sync.Map                     // device address -> logged
 	blockQUIC   atomic.Bool
 	open        sync.Map // flows currently in the tunnel
+	tcpFlows    atomic.Int32
+	udpFlows    atomic.Int32
+	overLogged  atomic.Int64 // unix time of the last "too many connections" log
 
-	errMu   sync.Mutex
-	errSeen map[string]time.Time
+	errMu     sync.Mutex
+	errSeen   map[string]time.Time
+	errPruned time.Time
 }
+
+// maxFlows caps the concurrent TCP flows and, separately, the UDP flows
+// (each costs goroutines and buffers), so a runaway app cannot exhaust memory.
+const maxFlows = 8192
 
 // dialFailed logs a failed outgoing connection (at most once a minute per target).
 // watchHotspot: connections from this range come from hotspot devices.
@@ -78,11 +86,20 @@ func (h *handler) dialFailed(kind string, m *M.Metadata, direct bool, err error)
 	if h.errSeen == nil {
 		h.errSeen = map[string]time.Time{}
 	}
-	if t, ok := h.errSeen[key]; ok && time.Since(t) < time.Minute {
+	now := time.Now()
+	if t, ok := h.errSeen[key]; ok && now.Sub(t) < time.Minute {
 		h.errMu.Unlock()
 		return
 	}
-	h.errSeen[key] = time.Now()
+	if len(h.errSeen) >= 256 && now.Sub(h.errPruned) >= time.Minute {
+		h.errPruned = now
+		for k, t := range h.errSeen {
+			if now.Sub(t) >= time.Minute {
+				delete(h.errSeen, k)
+			}
+		}
+	}
+	h.errSeen[key] = now
 	h.errMu.Unlock()
 	via := "SOCKS"
 	if direct {
@@ -92,13 +109,32 @@ func (h *handler) dialFailed(kind string, m *M.Metadata, direct bool, err error)
 }
 
 func (h *handler) HandleTCP(c adapter.TCPConn) {
+	if !h.acquireFlow(&h.tcpFlows, c) {
+		return
+	}
 	h.open.Store(c, struct{}{})
-	go func() { defer recoverPanic("tcp"); defer h.open.Delete(c); h.tcp(c) }()
+	go func() { defer h.tcpFlows.Add(-1); defer recoverPanic("tcp"); defer h.open.Delete(c); h.tcp(c) }()
 }
 
 func (h *handler) HandleUDP(c adapter.UDPConn) {
+	if !h.acquireFlow(&h.udpFlows, c) {
+		return
+	}
 	h.open.Store(c, struct{}{})
-	go func() { defer recoverPanic("udp"); defer h.open.Delete(c); h.udp(c) }()
+	go func() { defer h.udpFlows.Add(-1); defer recoverPanic("udp"); defer h.open.Delete(c); h.udp(c) }()
+}
+
+// acquireFlow counts a new flow, or closes it when maxFlows are already open.
+func (h *handler) acquireFlow(n *atomic.Int32, c io.Closer) bool {
+	if n.Add(1) <= maxFlows {
+		return true
+	}
+	n.Add(-1)
+	c.Close()
+	if now, last := time.Now().Unix(), h.overLogged.Load(); now-last >= 60 && h.overLogged.CompareAndSwap(last, now) && h.logf != nil {
+		h.logf("warn", "Too many open connections (%d); new ones are refused", maxFlows)
+	}
+	return false
 }
 
 // closeAll ends every flow still open in the tunnel (used on disconnect).
