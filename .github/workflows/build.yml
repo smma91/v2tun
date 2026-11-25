@@ -112,7 +112,7 @@ jobs:
       - name: Mobile package tests
         env:
           GOTOOLCHAIN: go1.26.11
-        run: go test -tags with_gvisor,with_quic,with_wireguard,with_utls -count=1 ./mobile
+        run: go test -tags with_gvisor,with_quic,with_wireguard,with_utls,badlinkname,tfogo_checklinkname0 -ldflags=-checklinkname=0 -count=1 ./mobile
 
       - name: Go library (gomobile)
         env:
