@@ -489,6 +489,11 @@
   "zh": "热点：连接 %s 失败：%v",
   "ar": "نقطة الاتصال: فشل الاتصال بـ %s: %v"
  },
+ "Hotspot: Windows Mobile Hotspot shares the tunnel": {
+  "fa": "هات‌اسپات: Mobile Hotspot ویندوز تونل را به اشتراک می‌گذارد",
+  "zh": "热点：Windows 移动热点正在共享隧道",
+  "ar": "نقطة الاتصال: نقطة الاتصال المحمولة في Windows تشارك النفق"
+ },
  "If the tunnel or proxy drops, the internet stays blocked and nothing leaks": {
   "fa": "اگر تونل یا پراکسی قطع شود، اینترنت بسته می‌ماند و چیزی لو نمی‌رود",
   "zh": "隧道或代理断开时保持断网，不会泄漏任何流量",
@@ -623,6 +628,11 @@
   "fa": "کوچک کردن",
   "zh": "最小化",
   "ar": "تصغير"
+ },
+ "Mobile Hotspot is not available (%s); using Wi-Fi Direct": {
+  "fa": "Mobile Hotspot در دسترس نیست (%s)؛ از Wi-Fi Direct استفاده می‌شود",
+  "zh": "移动热点不可用（%s），改用 Wi-Fi Direct",
+  "ar": "نقطة الاتصال المحمولة غير متاحة (%s)؛ يُستخدم Wi-Fi Direct"
  },
  "Name (optional)": {
   "fa": "نام (اختیاری)",

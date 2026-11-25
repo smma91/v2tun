@@ -16,7 +16,7 @@ func TestE2EHotspotAP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("started in %v: adapter %d, %s (%s), own DHCP: %v", time.Since(start).Round(time.Millisecond), ap.index, ap.addr, ap.subnet, ap.dhcp != nil)
+	t.Logf("started in %v: mobile hotspot %v (fallback: %q), adapter %d, %s (%s), own DHCP: %v", time.Since(start).Round(time.Millisecond), ap.tether, ap.fallback, ap.index, ap.addr, ap.subnet, ap.dhcp != nil)
 	if !ap.addr.IsValid() || !ap.Alive() {
 		t.Error("no address / not alive")
 	}

@@ -49,5 +49,8 @@ func watchdogMain(parent int) {
 }
 
 // cleanupNetwork: the WFP session and the Wintun adapter go away with the
-// process; only the hotspot's firewall rule may be left.
-func cleanupNetwork() { removeRelayRule() }
+// process; a hotspot may leave a firewall rule and Mobile Hotspot settings.
+func cleanupNetwork() {
+	removeRelayRule()
+	restoreMobileHotspot()
+}

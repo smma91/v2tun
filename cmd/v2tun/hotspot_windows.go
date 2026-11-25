@@ -12,6 +12,7 @@ import (
 	"net/netip"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -21,55 +22,154 @@ import (
 	"unsafe"
 )
 
-// The access point is a Wi-Fi Direct group in "legacy" mode: ordinary phones
-// and laptops join it like any Wi-Fi. It needs no Mobile Hotspot settings,
-// only a Wi-Fi card with Wi-Fi Direct (almost every card since Windows 10).
-// The WinRT publisher lives in a small hidden PowerShell process that ends,
-// taking the access point down, as soon as its input closes: when v2tun
-// stops it, exits, or is killed.
+// The access point runs in a small hidden PowerShell process (WinRT APIs),
+// which ends, taking the access point down, as soon as its input closes:
+// when v2tun stops it, exits, or is killed.
+//
+// First choice: Windows Mobile Hotspot with the tunnel as its source
+// (NetworkOperatorTetheringManager). It is Windows' own, well-kept access
+// point: it keeps sleeping phones connected, shares the connection (ICS) and
+// can be kept on while idle. The user's own hotspot name and password are put
+// back afterwards. If Windows refuses it (policy, adapter), a plain Wi-Fi
+// Direct "legacy" access point is used instead.
 const apScript = `
 $ErrorActionPreference = 'Stop'
+function Say($m) { [Console]::Out.WriteLine($m); [Console]::Out.Flush() }
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$asTask = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+  $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -like 'IAsyncOperation?1' } | Select-Object -First 1
+function AwaitOp($op, [Type]$t) { $task = $asTask.MakeGenericMethod($t).Invoke($null, @($op)); $null = $task.Wait(-1); $task.Result }
+$asTaskAction = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+  $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncAction' } | Select-Object -First 1
+function AwaitAction($a) { $task = $asTaskAction.Invoke($null, @($a)); $null = $task.Wait(-1) }
+
+$mode = ''
+$tm = $null
+$old = $null
 try {
-  $null = [Windows.Devices.WiFiDirect.WiFiDirectAdvertisementPublisher, Windows.Devices.WiFiDirect, ContentType = WindowsRuntime]
-  $null = [Windows.Security.Credentials.PasswordCredential, Windows.Security.Credentials, ContentType = WindowsRuntime]
-  $pub = New-Object Windows.Devices.WiFiDirect.WiFiDirectAdvertisementPublisher
-  $adv = $pub.Advertisement
-  $adv.IsAutonomousGroupOwnerEnabled = $true
-  $adv.LegacySettings.IsEnabled = $true
-  $adv.LegacySettings.Ssid = $env:V2TUN_AP_SSID
-  $cred = New-Object Windows.Security.Credentials.PasswordCredential
-  $cred.Password = $env:V2TUN_AP_PASS
-  $adv.LegacySettings.Passphrase = $cred
-  $pub.Start()
-} catch { [Console]::Out.WriteLine("error " + $_.Exception.Message); [Console]::Out.Flush(); exit 1 }
+  $null = [Windows.Networking.Connectivity.NetworkInformation, Windows.Networking.Connectivity, ContentType = WindowsRuntime]
+  $null = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]
+  $prof = [Windows.Networking.Connectivity.NetworkInformation]::GetConnectionProfiles() | Where-Object { $_.ProfileName -eq $env:V2TUN_AP_SOURCE } | Select-Object -First 1
+  if (-not $prof) { throw 'the tunnel connection is not known to Windows yet' }
+  $tm = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager]::CreateFromConnectionProfile($prof)
+  if ($tm.TetheringOperationalState -eq 'On') { $null = AwaitOp $tm.StopTetheringAsync() ([Windows.Networking.NetworkOperators.NetworkOperatorTetheringOperationResult]) }
+  $old = $tm.GetCurrentAccessPointConfiguration()
+  Say ('old ' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([string]$old.Ssid + [char]10 + [string]$old.Passphrase)))
+  $cfg = $tm.GetCurrentAccessPointConfiguration()
+  $cfg.Ssid = $env:V2TUN_AP_SSID
+  $cfg.Passphrase = $env:V2TUN_AP_PASS
+  AwaitAction $tm.ConfigureAccessPointAsync($cfg)
+  try { [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager]::DisableNoConnectionsTimeout() } catch {}
+  $r = AwaitOp $tm.StartTetheringAsync() ([Windows.Networking.NetworkOperators.NetworkOperatorTetheringOperationResult])
+  if ([string]$r.Status -ne 'Success') { throw ('Mobile Hotspot: ' + $r.Status + ' ' + $r.AdditionalErrorMessage) }
+  $mode = 'tether'
+} catch {
+  Say ('fallback ' + $_.Exception.Message)
+  if ($old) { try { AwaitAction $tm.ConfigureAccessPointAsync($old) } catch {} ; $old = $null }
+  try {
+    $null = [Windows.Devices.WiFiDirect.WiFiDirectAdvertisementPublisher, Windows.Devices.WiFiDirect, ContentType = WindowsRuntime]
+    $null = [Windows.Security.Credentials.PasswordCredential, Windows.Security.Credentials, ContentType = WindowsRuntime]
+    $pub = New-Object Windows.Devices.WiFiDirect.WiFiDirectAdvertisementPublisher
+    $adv = $pub.Advertisement
+    $adv.IsAutonomousGroupOwnerEnabled = $true
+    $adv.LegacySettings.IsEnabled = $true
+    $adv.LegacySettings.Ssid = $env:V2TUN_AP_SSID
+    $cred = New-Object Windows.Security.Credentials.PasswordCredential
+    $cred.Password = $env:V2TUN_AP_PASS
+    $adv.LegacySettings.Passphrase = $cred
+    $pub.Start()
+    $mode = 'wifidirect'
+  } catch { Say ('error ' + $_.Exception.Message); exit 1 }
+}
+Say ('mode ' + $mode)
 $last = ''
+$lastClients = -1
 # Stream.ReadAsync really runs in the background (Console.In.ReadLineAsync
 # blocks in Windows PowerShell); it completes when v2tun closes the input.
 $buf = New-Object byte[] 64
 $in = [Console]::OpenStandardInput().ReadAsync($buf, 0, 64)
 while ($true) {
-  $s = [string]$pub.Status
-  if ($s -ne $last) { [Console]::Out.WriteLine("status " + $s); [Console]::Out.Flush(); $last = $s }
+  if ($mode -eq 'tether') {
+    $s = if ([string]$tm.TetheringOperationalState -eq 'On') { 'Started' } else { 'Stopped' }
+    $c = [int]$tm.ClientCount
+    if ($c -ne $lastClients) { Say ('clients ' + $c); $lastClients = $c }
+  } else { $s = [string]$pub.Status }
+  if ($s -ne $last) { Say ('status ' + $s); $last = $s }
   if ($s -eq 'Aborted' -or $s -eq 'Stopped') { break }
-  if ($in.Wait(500)) { break }
+  if ($in.Wait(1000)) { break }
 }
-try { $pub.Stop() } catch {}
+if ($mode -eq 'tether') {
+  try { $null = AwaitOp $tm.StopTetheringAsync() ([Windows.Networking.NetworkOperators.NetworkOperatorTetheringOperationResult]) } catch {}
+  try { AwaitAction $tm.ConfigureAccessPointAsync($old) } catch {}
+  try { [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager]::EnableNoConnectionsTimeout() } catch {}
+} else { try { $pub.Stop() } catch {} }
 `
+
+// hotspotBackupPath holds the user's own Mobile Hotspot name and password
+// while v2tun uses it (encoded, only readable by administrators).
+func hotspotBackupPath() string { return filepath.Join(dataDir(), "hotspot-backup") }
+
+// The helper puts the user's settings back itself; this is for a v2tun that
+// was killed: turn Windows Mobile Hotspot off and restore its name/password.
+const restoreScript = `
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$null = [Windows.Networking.Connectivity.NetworkInformation, Windows.Networking.Connectivity, ContentType = WindowsRuntime]
+$null = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager, Windows.Networking.NetworkOperators, ContentType = WindowsRuntime]
+$ms = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 }
+$op = $ms | Where-Object { $_.GetParameters()[0].ParameterType.Name -like 'IAsyncOperation?1' } | Select-Object -First 1
+$act = $ms | Where-Object { $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncAction' } | Select-Object -First 1
+$prof = [Windows.Networking.Connectivity.NetworkInformation]::GetInternetConnectionProfile()
+if (-not $prof) { $prof = [Windows.Networking.Connectivity.NetworkInformation]::GetConnectionProfiles() | Select-Object -First 1 }
+$tm = [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager]::CreateFromConnectionProfile($prof)
+$parts = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:V2TUN_AP_OLD)) -split [char]10, 2
+$cur = $tm.GetCurrentAccessPointConfiguration()
+if ($cur.Ssid -eq $env:V2TUN_AP_SSID) {
+  if ([string]$tm.TetheringOperationalState -eq 'On') { $null = $op.MakeGenericMethod([Windows.Networking.NetworkOperators.NetworkOperatorTetheringOperationResult]).Invoke($null, @($tm.StopTetheringAsync())).Wait(-1) }
+  $cur.Ssid = $parts[0]
+  $cur.Passphrase = $parts[1]
+  $null = $act.Invoke($null, @($tm.ConfigureAccessPointAsync($cur))).Wait(-1)
+}
+try { [Windows.Networking.NetworkOperators.NetworkOperatorTetheringManager]::EnableNoConnectionsTimeout() } catch {}
+'ok'
+`
+
+// restoreMobileHotspot undoes what a killed v2tun left in Mobile Hotspot.
+func restoreMobileHotspot() {
+	old, err := os.ReadFile(hotspotBackupPath())
+	if err != nil {
+		return
+	}
+	enc := utf16.Encode([]rune(restoreScript))
+	b := make([]byte, 2*len(enc))
+	for i, c := range enc {
+		binary.LittleEndian.PutUint16(b[2*i:], c)
+	}
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+		"-EncodedCommand", base64.StdEncoding.EncodeToString(b))
+	cmd.Env = append(os.Environ(), "V2TUN_AP_OLD="+strings.TrimSpace(string(old)), "V2TUN_AP_SSID="+loadSettings().HotspotSSID)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	if out, err := cmd.CombinedOutput(); err == nil && strings.Contains(string(out), "ok") {
+		os.Remove(hotspotBackupPath())
+	}
+}
 
 const apPrefix = "192.168.137.0/24" // the address range Windows uses for shared connections
 
 type accessPoint struct {
-	cmd    *exec.Cmd
-	stdin  io.WriteCloser
-	done   atomic.Bool
-	index  uint32 // the Wi-Fi Direct virtual adapter
-	name   string // its connection name (for connection sharing)
-	ics    bool   // Windows connection sharing set up: tunnel -> hotspot
-	luid   uint64
-	addr   netip.Addr
-	subnet netip.Prefix
-	dhcp   *dhcpServer // only when Windows itself does not hand out addresses
-	dns    *dnsRelay
+	cmd      *exec.Cmd
+	stdin    io.WriteCloser
+	done     atomic.Bool
+	index    uint32 // the Wi-Fi Direct virtual adapter
+	name     string // its connection name (for connection sharing)
+	ics      bool   // Windows connection sharing set up: tunnel -> hotspot
+	tether   bool   // Windows Mobile Hotspot (it shares the connection itself)
+	fallback string // why Mobile Hotspot was not used
+	count    atomic.Int32
+	luid     uint64
+	addr     netip.Addr
+	subnet   netip.Prefix
+	dhcp     *dhcpServer // only when Windows itself does not hand out addresses
+	dns      *dnsRelay
 }
 
 func startAccessPoint(ssid, pass string) (*accessPoint, error) {
@@ -86,7 +186,7 @@ func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 	}
 	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
 		"-EncodedCommand", base64.StdEncoding.EncodeToString(b))
-	cmd.Env = append(os.Environ(), "V2TUN_AP_SSID="+ssid, "V2TUN_AP_PASS="+pass)
+	cmd.Env = append(os.Environ(), "V2TUN_AP_SSID="+ssid, "V2TUN_AP_PASS="+pass, "V2TUN_AP_SOURCE="+tunName)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -100,7 +200,13 @@ func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 		return nil, err
 	}
 	ap := &accessPoint{cmd: cmd, stdin: stdin}
-	started := make(chan error, 1)
+	started := make(chan error, 4)
+	report := func(err error) {
+		select {
+		case started <- err:
+		default:
+		}
+	}
 	go func() {
 		defer recoverPanic("hotspot")
 		sc := bufio.NewScanner(stdout)
@@ -108,21 +214,30 @@ func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 			l := strings.TrimSpace(sc.Text())
 			switch {
 			case l == "status Started":
-				started <- nil
+				report(nil)
 			case l == "status Aborted":
-				started <- trErr("Wi-Fi could not start the hotspot. Turn Wi-Fi on (it does not need to be connected) and try again")
+				report(trErr("Wi-Fi could not start the hotspot. Turn Wi-Fi on (it does not need to be connected) and try again"))
+			case l == "mode tether":
+				ap.tether = true
+			case strings.HasPrefix(l, "clients "):
+				n, _ := strconv.Atoi(strings.TrimPrefix(l, "clients "))
+				ap.count.Store(int32(n))
+			case strings.HasPrefix(l, "old "):
+				writeSecret(hotspotBackupPath(), []byte(strings.TrimPrefix(l, "old ")))
+			case strings.HasPrefix(l, "fallback "):
+				ap.fallback = strings.TrimPrefix(l, "fallback ")
 			case strings.HasPrefix(l, "error "):
-				started <- fmt.Errorf("Wi-Fi Direct: %s", strings.TrimPrefix(l, "error "))
+				report(fmt.Errorf("Wi-Fi Direct: %s", strings.TrimPrefix(l, "error ")))
 			}
 		}
 		cmd.Wait()
 		ap.done.Store(true)
-		started <- errors.New("hotspot helper ended")
+		report(errors.New("hotspot helper ended"))
 	}()
 	select {
 	case err = <-started:
-	case <-time.After(20 * time.Second):
-		err = errors.New("Wi-Fi Direct did not start in time")
+	case <-time.After(40 * time.Second):
+		err = errors.New("the hotspot did not start in time")
 	}
 	if err != nil {
 		ap.Close()
@@ -203,8 +318,12 @@ func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr), onFai
 
 func (ap *accessPoint) Alive() bool { return !ap.done.Load() }
 
-// Clients counts the devices seen on the hotspot recently (ARP table).
+// Clients counts the devices on the hotspot: as reported by Mobile Hotspot,
+// or the devices seen recently (ARP table).
 func (ap *accessPoint) Clients() int {
+	if ap.tether {
+		return int(ap.count.Load())
+	}
 	size := uint32(16 * 1024)
 	var buf []byte
 	for i := 0; i < 4; i++ {
@@ -242,12 +361,16 @@ func (ap *accessPoint) Close() {
 	if ap.dns != nil {
 		ap.dns.Close()
 	}
-	ap.stdin.Close() // the helper stops the access point and exits
+	ap.stdin.Close() // the helper stops the access point, restores Mobile Hotspot and exits
 	go func() {
-		time.Sleep(5 * time.Second)
+		for i := 0; i < 40 && !ap.done.Load(); i++ {
+			time.Sleep(250 * time.Millisecond)
+		}
 		if !ap.done.Load() && ap.cmd.Process != nil {
 			ap.cmd.Process.Kill()
+			return // restored at the next start from the backup
 		}
+		os.Remove(hotspotBackupPath())
 	}()
 }
 
@@ -330,7 +453,14 @@ func (e *Engine) routeHotspot(ap *accessPoint) error {
 		return trErr("Connect first: the hotspot shares the tunnel")
 	}
 	allowRelay()
-	if err := setICS(tunName, ap.name); err != nil {
+	if ap.tether {
+		e.logf("info", "Hotspot: Windows Mobile Hotspot shares the tunnel")
+	} else if ap.fallback != "" {
+		e.logf("warn", "Mobile Hotspot is not available (%s); using Wi-Fi Direct", ap.fallback)
+	}
+	if ap.tether {
+		// nothing to set up: Mobile Hotspot shares the connection itself
+	} else if err := setICS(tunName, ap.name); err != nil {
 		e.logf("warn", "Connection sharing (ICS) is not available (%v); using IP forwarding", err)
 	} else {
 		ap.ics = true
