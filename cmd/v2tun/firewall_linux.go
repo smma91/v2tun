@@ -122,6 +122,11 @@ func enableKillSwitch(tunLUID uint64, apps []string, allowLAN, full bool) (*kill
 	add(join(oif(expr.CmpOpEq, "lo"), accept))
 	add(join(oif(expr.CmpOpEq, tunName), accept))
 	add(join(markIs(expr.CmpOpEq), accept))
+	// Replies to connections other devices opened to v2tun's local proxy.
+	add(join([]expr.Any{
+		&expr.Ct{Register: 1, Key: expr.CtKeyDIRECTION},
+		&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: []byte{1}}, // IP_CT_DIR_REPLY
+	}, accept))
 	// DNS redirected into the tunnel by captureDNS: the packet is rerouted to
 	// the tunnel, but the hook still reports the original interface.
 	add(join([]expr.Any{

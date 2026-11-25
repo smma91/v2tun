@@ -93,6 +93,7 @@ func (a *App) startCore() error {
 	}
 	s := a.GetSettings()
 	a.core.SetListen(s.ProxyPort, s.ProxyLAN)
+	allowProxyLAN(s.ProxyPort, s.ProxyLAN) // other devices may reach the proxy through the firewall
 	if err := a.core.Start(up, st.Usable(), st.Selected); err != nil {
 		return err
 	}

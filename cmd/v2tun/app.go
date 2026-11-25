@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"slices"
@@ -432,13 +433,37 @@ func (a *App) stopProxyMode() {
 }
 
 // ProxyAddresses lists where the local proxy can be reached (SOCKS5 and HTTP
-// share the port): localhost, plus this PC's network addresses if LAN is on.
+// share the port): localhost, plus, if LAN access is on, every address other
+// devices can use: the Wi-Fi / Ethernet network this computer is on and its
+// own hotspot.
 func (a *App) ProxyAddresses() []string {
 	s := a.GetSettings()
-	out := []string{"127.0.0.1:" + strconv.Itoa(s.ProxyPort)}
+	port := strconv.Itoa(s.ProxyPort)
+	out := []string{"127.0.0.1:" + port}
 	if s.ProxyLAN {
-		if up, err := a.coreUplink(); err == nil {
-			out = append(out, up.Addr.String()+":"+strconv.Itoa(s.ProxyPort))
+		for _, ip := range lanAddresses() {
+			out = append(out, ip.String()+":"+port)
+		}
+	}
+	return out
+}
+
+// lanAddresses: private IPv4 addresses of connected adapters, except the
+// tunnel and virtual machine / container switches.
+func lanAddresses() []netip.Addr {
+	as, _ := listAdapters()
+	var out []netip.Addr
+	for _, x := range as {
+		d := strings.ToLower(x.Name + " " + x.Description)
+		if !x.Up || x.Name == tunName || strings.Contains(d, "vethernet") || strings.Contains(d, "vmware") ||
+			strings.Contains(d, "virtualbox") || strings.Contains(d, "docker") || strings.Contains(d, "loopback") ||
+			strings.HasPrefix(x.Name, "veth") || strings.HasPrefix(x.Name, "br-") || x.Name == "lo" {
+			continue
+		}
+		for _, ip := range x.V4 {
+			if ip.IsPrivate() && !slices.Contains(out, ip) {
+				out = append(out, ip)
+			}
 		}
 	}
 	return out

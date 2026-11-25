@@ -62,6 +62,10 @@ func trayAvailable() bool {
 	return err == nil && has
 }
 
+// allowProxyLAN: nothing to open on Linux (v2tun does not filter incoming
+// connections; the kill switch lets replies to them out).
+func allowProxyLAN(port int, on bool) {}
+
 func hasPrivileges() bool {
 	hdr := unix.CapUserHeader{Version: unix.LINUX_CAPABILITY_VERSION_3}
 	var data [2]unix.CapUserData

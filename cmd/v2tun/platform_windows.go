@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 const platform = "windows"
@@ -43,6 +44,23 @@ func hasPrivileges() bool { return true }
 // grantPermission: nothing to grant, Windows asks for administrator rights
 // when v2tun starts.
 func grantPermission(a *App) error { return nil }
+
+const proxyRule = "v2tun local proxy"
+
+// allowProxyLAN opens Windows Firewall for the local proxy when other devices
+// may use it (Wi-Fi / hotspot networks are often "public", where incoming
+// connections are blocked), and closes it again when they may not.
+func allowProxyLAN(port int, on bool) {
+	run("netsh", "advfirewall", "firewall", "delete", "rule", "name="+proxyRule)
+	exe, err := os.Executable()
+	if !on || err != nil {
+		return
+	}
+	for _, proto := range []string{"TCP", "UDP"} {
+		run("netsh", "advfirewall", "firewall", "add", "rule", "name="+proxyRule, "dir=in", "action=allow",
+			"program="+exe, "protocol="+proto, "localport="+strconv.Itoa(port), "remoteip=localsubnet")
+	}
+}
 
 // trayAvailable: Windows always has a notification area.
 func trayAvailable() bool { return true }
