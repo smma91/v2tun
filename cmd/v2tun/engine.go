@@ -74,8 +74,13 @@ func (e *Engine) Running() bool {
 
 // conflict reports another TUN (e.g. v2rayN's own TUN mode) that already
 // captures the default route.
+// conflict reports only what blocks connecting (a proxy client's own TUN);
+// another VPN under v2tun is allowed and only logged by Start.
 func conflict() string {
-	c, _ := findConflict()
+	c, otherVPN := findConflict()
+	if otherVPN {
+		return ""
+	}
 	return c
 }
 
@@ -105,7 +110,7 @@ func (e *Engine) Start(s Settings) (err error) {
 		return nil
 	}
 	if c, otherVPN := findConflict(); otherVPN {
-		return trErr("Another VPN or TUN is active (%s). Turn it off first", c)
+		e.logf("warn", "Another VPN carries the internet traffic (%s); v2tun connects through it", c)
 	} else if c != "" {
 		return trErr("v2rayN's TUN mode is on (%s). Turn it off in v2rayN first", c)
 	}
