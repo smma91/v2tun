@@ -148,6 +148,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private fun watchTraffic() {
         val o = CommandClientOptions()
         o.addCommand(Libbox.CommandStatus)
+        o.addCommand(Libbox.CommandLog)
         o.statusInterval = 1_000_000_000L // 1 s
         val c = Libbox.newCommandClient(object : CommandClientHandler {
             override fun writeStatus(message: StatusMessage) {
@@ -162,7 +163,10 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             override fun updateClashMode(newMode: String?) {}
             override fun writeConnectionEvents(events: ConnectionEvents?) {}
             override fun writeGroups(message: OutboundGroupIterator?) {}
-            override fun writeLogs(messageList: LogIterator?) {}
+            override fun writeLogs(messageList: LogIterator?) {
+                val it = messageList ?: return
+                while (it.hasNext()) Log.i("v2tun-core", it.next().message)
+            }
             override fun writeOutbounds(message: OutboundGroupItemIterator?) {}
         }, o)
         statusClient = c
@@ -268,39 +272,58 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     }
 
     override fun startDefaultInterfaceMonitor(listener: InterfaceUpdateListener) {
-        val report = { network: Network? ->
+        // The best real (non-VPN) network: asking for the "default" network
+        // would return this VPN itself.
+        var current: Network? = null
+        val report: (Network?) -> Unit = { network ->
+            current = network
             val lp = network?.let { connectivity.getLinkProperties(it) }
             val name = lp?.interfaceName
-            if (name == null) {
+            if (network == null || name == null) {
                 listener.updateDefaultInterface("", -1, false, false)
             } else {
                 val index = runCatching { JavaInterface.getByName(name)?.index ?: -1 }.getOrDefault(-1)
-                val caps = network.let { connectivity.getNetworkCapabilities(it) }
-                val expensive = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == false
-                listener.updateDefaultInterface(name, index, expensive, false)
+                val caps = connectivity.getNetworkCapabilities(network)
+                val metered = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == false
+                listener.updateDefaultInterface(name, index, metered, false)
             }
+            // Android shows the VPN as using this network (metered, validated...).
+            runCatching { setUnderlyingNetworks(network?.let { arrayOf(it) }) }
         }
         val cb = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) = report(network)
-            override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) = report(network)
-            override fun onLost(network: Network) = report(connectivity.activeNetwork.takeIf { it != network })
+            override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {
+                if (network == current) report(network)
+            }
+            override fun onLost(network: Network) {
+                if (network == current) report(null)
+            }
         }
         networkCallback = cb
-        if (Build.VERSION.SDK_INT >= 24) connectivity.registerDefaultNetworkCallback(cb)
-        report(connectivity.activeNetwork)
+        val request = android.net.NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+            .build()
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        if (Build.VERSION.SDK_INT >= 31) {
+            connectivity.registerBestMatchingNetworkCallback(request, cb, handler)
+        } else {
+            connectivity.requestNetwork(request, cb, handler)
+        }
     }
 
     override fun closeDefaultInterfaceMonitor(listener: InterfaceUpdateListener) {
         networkCallback?.let { runCatching { connectivity.unregisterNetworkCallback(it) } }
         networkCallback = null
     }
-
     override fun getInterfaces(): NetworkInterfaceIterator {
         val list = mutableListOf<BoxInterface>()
         for (network in connectivity.allNetworks) {
             val lp = connectivity.getLinkProperties(network) ?: continue
             val caps = connectivity.getNetworkCapabilities(network) ?: continue
             if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) continue
+            if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) continue // e.g. the operator's IMS (VoLTE) network
             val name = lp.interfaceName ?: continue
             val ji = runCatching { JavaInterface.getByName(name) }.getOrNull() ?: continue
             val i = BoxInterface()
