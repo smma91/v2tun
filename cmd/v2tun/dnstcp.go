@@ -25,8 +25,9 @@ import (
 type dnsTCP struct {
 	d *routerDialer
 
-	mu   sync.Mutex
-	idle map[netip.Addr][]idleConn
+	mu     sync.Mutex
+	idle   map[netip.Addr][]idleConn
+	closed bool // after close, connections are not pooled any more
 
 	cacheMu sync.Mutex
 	cache   map[string]dnsCached
@@ -121,7 +122,7 @@ func (c *dnsTCP) dial(server netip.Addr) (net.Conn, error) {
 func (c *dnsTCP) put(server netip.Addr, conn net.Conn) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if len(c.idle[server]) >= 4 {
+	if c.closed || len(c.idle[server]) >= 4 {
 		conn.Close()
 		return
 	}
@@ -198,6 +199,7 @@ func (c *dnsTCP) query(server netip.Addr, q []byte) ([]byte, error) {
 func (c *dnsTCP) close() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.closed = true
 	for _, l := range c.idle {
 		for _, ic := range l {
 			ic.Close()

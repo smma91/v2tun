@@ -38,12 +38,16 @@ type Engine struct {
 	dialer   *routerDialer
 	handler  *handler
 	cancel   context.CancelFunc
+	monDone  chan struct{} // closed when monitor returns
 	tz       *tzManager
 
 	settings Settings
 	since    time.Time
-	servers  []string
-	cfgMod   int64
+
+	// pinMu guards servers and the hosts-file pins: monitor updates them
+	// without e.mu, and must never pin again after Stop unpinned.
+	pinMu   sync.Mutex
+	servers []string
 
 	directUp, directDown atomic.Int64
 }
@@ -127,9 +131,8 @@ func (e *Engine) Start(s Settings) (err error) {
 	}
 	e.logf("info", "Main internet: %s", up)
 
-	e.servers = proxyServers(s.V2rayNDir)
-	e.cfgMod = configModTime(s.V2rayNDir)
-	e.pinServers(up)
+	cfgMod := configModTime(s.V2rayNDir)
+	e.pinServers(context.Background(), up, proxyServers(s.V2rayNDir))
 	cleanup = append(cleanup, func() { unpinHosts() })
 
 	dev, err := openTun(tunMTU)
@@ -207,11 +210,12 @@ func (e *Engine) Start(s Settings) (err error) {
 	e.settings = s
 	e.since = time.Now()
 	e.running = true
-	go e.monitor(ctx, dev.LUID())
-
 	if s.MatchTimezone {
 		e.tz = newTZManager()
 	}
+	e.monDone = make(chan struct{})
+	go e.monitor(ctx, e.monDone, dev.LUID(), e.dialer, s, cfgMod, e.tz)
+
 	st := runState{PID: os.Getpid(), Since: time.Now().Unix()}
 	if e.tz != nil {
 		st.OrigTZ = e.tz.orig
@@ -223,11 +227,15 @@ func (e *Engine) Start(s Settings) (err error) {
 
 // pinServers resolves the proxy servers outside the tunnel and pins them in
 // the hosts file, so the core can always reach its server.
-func (e *Engine) pinServers(up uplink) {
+// Nothing is changed once ctx is canceled (the tunnel is being stopped).
+func (e *Engine) pinServers(ctx context.Context, up uplink, servers []string) {
 	pins := map[string][]netip.Addr{}
-	for _, h := range e.servers {
+	for _, h := range servers {
 		if _, err := netip.ParseAddr(h); err == nil {
 			continue
+		}
+		if ctx.Err() != nil {
+			return
 		}
 		ips, err := resolveDirect(up, h)
 		if err != nil {
@@ -236,6 +244,12 @@ func (e *Engine) pinServers(up uplink) {
 		}
 		pins[h] = ips
 	}
+	e.pinMu.Lock()
+	defer e.pinMu.Unlock()
+	if ctx.Err() != nil {
+		return
+	}
+	e.servers = servers
 	if len(pins) > 0 {
 		if err := pinHosts(pins); err != nil {
 			e.logf("warn", "hosts: %v", err)
@@ -247,11 +261,15 @@ func (e *Engine) pinServers(up uplink) {
 	}
 }
 
-func (e *Engine) monitor(ctx context.Context, luid uint64) {
+// monitor gets everything it needs as arguments and touches no Engine field
+// except through pinServers, so a monitor that Stop stopped waiting for
+// cannot interfere with the next Start.
+func (e *Engine) monitor(ctx context.Context, done chan<- struct{}, luid uint64, d *routerDialer, s Settings, cfgMod int64, tz *tzManager) {
+	defer close(done)
 	defer recoverPanic("monitor")
 	t := time.NewTicker(3 * time.Second)
 	defer t.Stop()
-	lastUp := e.dialer.getUplink().String()
+	lastUp := d.getUplink().String()
 	socksDown := false
 	n := 0
 	for {
@@ -261,30 +279,30 @@ func (e *Engine) monitor(ctx context.Context, luid uint64) {
 		case <-t.C:
 		}
 		n++
-		if up, err := findUplink(map[uint64]bool{luid: true}); err == nil && up.String() != lastUp {
-			e.dialer.setUplink(up)
+		if up, err := findUplink(map[uint64]bool{luid: true}); err == nil && up.String() != lastUp && ctx.Err() == nil {
+			d.setUplink(up)
 			lastUp = up.String()
 			e.logf("info", "Network changed: %s", up)
 			if e.onUplink != nil {
 				go e.onUplink(up)
 			}
 		}
-		if ok := socksAlive(e.settings.SocksAddr); ok == socksDown {
+		if ok := socksAlive(s.SocksAddr); ok == socksDown && ctx.Err() == nil {
 			socksDown = !ok
 			if socksDown {
-				e.logf("error", "Proxy (%s) does not respond; traffic stopped (no leak)", e.settings.SocksAddr)
+				e.logf("error", "Proxy (%s) does not respond; traffic stopped (no leak)", s.SocksAddr)
 			} else {
 				e.logf("info", "Proxy is available again")
 			}
 		}
-		if m := configModTime(e.settings.V2rayNDir); e.settings.V2rayNDir != "" && m != e.cfgMod {
-			e.cfgMod = m
-			e.servers = proxyServers(e.settings.V2rayNDir)
-			e.logf("info", "v2rayN settings changed: %s", strings.Join(e.servers, ", "))
-			e.pinServers(e.dialer.getUplink())
+		if m := configModTime(s.V2rayNDir); s.V2rayNDir != "" && m != cfgMod && ctx.Err() == nil {
+			cfgMod = m
+			servers := proxyServers(s.V2rayNDir)
+			e.logf("info", "v2rayN settings changed: %s", strings.Join(servers, ", "))
+			e.pinServers(ctx, d.getUplink(), servers)
 		}
-		if e.tz != nil && n%20 == 1 {
-			e.tz.Update(e.logf)
+		if tz != nil && n%20 == 1 && ctx.Err() == nil {
+			tz.Update(e.logf)
 		}
 	}
 }
@@ -299,29 +317,46 @@ func (e *Engine) Stop() {
 	// Tear the tunnel down without waiting for open connections to finish:
 	// close every flow first (a browser keeps dozens open), then the device
 	// (Windows removes its routes with it), then the stack. Never block forever.
+	// The goroutine works on its own copies, so if it is still running after
+	// the timeout it cannot touch what a new Start sets up.
+	h, dev, stk := e.handler, e.dev, e.stk
+	conns := statistic.DefaultManager.Snapshot().Connections
 	done := make(chan struct{})
 	go func() {
 		defer recoverPanic("engine")
 		defer close(done)
-		e.handler.closeAll()
-		for _, c := range statistic.DefaultManager.Snapshot().Connections {
+		h.closeAll()
+		for _, c := range conns {
 			c.Close()
 		}
-		e.handler.dnsTCP.close()
-		e.dev.Close()
-		e.stk.Close()
-		e.stk.Wait()
+		h.dnsTCP.close()
+		dev.Close()
+		stk.Close()
+		stk.Wait()
 	}()
-	select {
-	case <-done:
-	case <-time.After(4 * time.Second):
+	deadline := time.Now().Add(4 * time.Second)
+	wait := func(ch <-chan struct{}) bool {
+		t := time.NewTimer(time.Until(deadline))
+		defer t.Stop()
+		select {
+		case <-ch:
+			return true
+		case <-t.C:
+			return false
+		}
+	}
+	if !wait(done) {
 		e.logf("warn", "Closing open connections took too long; finishing the disconnect without waiting")
 	}
+	wait(e.monDone) // a late monitor is harmless: it checks its canceled context
 	if e.tz != nil {
 		e.tz.Restore(e.logf)
 		e.tz = nil
 	}
+	e.pinMu.Lock()
 	unpinHosts()
+	e.servers = nil
+	e.pinMu.Unlock()
 	e.unconfigureTun()
 	flushDNSCache()
 	// Removed last, so nothing can leak while the tunnel is torn down.
@@ -353,7 +388,9 @@ func (e *Engine) Info() EngineInfo {
 	snap := statistic.DefaultManager.Snapshot()
 	info.Since = e.since.Unix()
 	info.Uplink = e.dialer.getUplink().String()
+	e.pinMu.Lock()
 	info.Servers = e.servers
+	e.pinMu.Unlock()
 	info.KillSwitch = e.ks != nil && e.settings.KillSwitch
 	info.Proxied = e.dialer.proxied.Load()
 	info.Direct = e.dialer.direct.Load()

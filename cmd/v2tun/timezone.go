@@ -2,9 +2,17 @@
 
 package main
 
+import "sync"
+
 // tzManager keeps the system time zone in line with the proxy exit, so the
 // browser time zone does not contradict the IP location. Restored on stop.
-type tzManager struct{ orig, current string }
+type tzManager struct {
+	orig string
+
+	mu       sync.Mutex
+	current  string
+	restored bool // no more changes after Restore
+}
 
 func newTZManager() *tzManager {
 	orig, err := getTZ()
@@ -20,7 +28,12 @@ func (m *tzManager) Update(logf func(string, string, ...any)) {
 		return
 	}
 	target, ok := tzTarget(info.Timezone)
-	if !ok || target == m.current {
+	if !ok {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.restored || target == m.current {
 		return
 	}
 	if err := setTZ(target); err != nil {
@@ -32,10 +45,14 @@ func (m *tzManager) Update(logf func(string, string, ...any)) {
 }
 
 func (m *tzManager) Restore(logf func(string, string, ...any)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.restored = true
 	if m.current == m.orig {
 		return
 	}
 	if err := setTZ(m.orig); err == nil {
+		m.current = m.orig
 		logf("info", "Time zone restored to %s", m.orig)
 	}
 }
