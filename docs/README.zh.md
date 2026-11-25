@@ -32,6 +32,7 @@
 | ⚡ **支持所有主流协议** | VLESS Reality / XHTTP、VMess、Trojan、Shadowsocks、Hysteria2、TUIC、WireGuard、NaiveProxy、OpenVPN、AnyConnect 等。 |
 | 🚀 **始终用最快的服务器** | Ping、真实延迟、测速，以及在不中断下载的情况下自动切换服务器的“自动”模式。 |
 | 🔌 **兼容 v2rayN** | 已经在用 v2rayN？v2tun 会自动找到它，并让整个系统走它的代理。 |
+| 📱 **手机和电视也能用** | Android 应用(手机、平板和 Android TV),同样的服务器,支持二维码导入和分享。 |
 | 🧩 **简单免费** | 一个小巧的程序，简洁的深色界面，支持 4 种语言，开源（GPL-3.0）。 |
 
 ## 功能
@@ -60,6 +61,15 @@
 ### 🧭 控制
 - **分流**：按应用和域名 / IP 段，支持“排除”和“仅包含”模式。
 - **智能 QUIC 处理：** 服务器不支持 UDP 时，应用会立即改用 TCP，不会卡住。
+
+### 📱 Android 与 Android TV
+- 同样的协议和订阅;可从剪贴板、**扫描二维码**(相机或图片)或把链接分享给 v2tun 来添加服务器。
+- 以二维码或链接**分享任意服务器或订阅**。
+- 实时速度、出口 IP 及国家、服务器 Ping、快捷设置图块、开机自动连接。
+- **本地代理**,供同一 Wi-Fi 或手机热点上的其他设备使用。
+- Android TV:专为遥控器(方向键)设计,主屏幕有电视横幅。
+- 省电:只在应用显示时统计实时数据,Doze 休眠时内核暂停。
+- Android 7.0 或更高版本。
 
 ### 🖥️ 桌面
 - 托盘图标、登录时启动（无密码或 UAC 提示）、自动连接。
@@ -105,6 +115,23 @@
 - v2tun 不以 root 运行：窗口以当前用户运行，程序只获得两项必要的网络权限（`cap_net_admin`、`cap_net_raw`）。安装包和 `install.sh` 会自动设置；若缺少权限（例如 AppImage），界面会显示 **授予权限** 按钮，只需输入一次密码，AppImage 会同时把自己安装到 `/opt/v2tun`。
 - 托盘图标需要桌面支持托盘（KDE、Xfce、Cinnamon、Ubuntu 均支持；纯 GNOME 需安装 AppIndicator 扩展）。没有托盘时，关闭窗口会将其最小化。
 - 设置和服务器保存在 `~/.config/v2tun`。
+
+## Android 与 Android TV
+
+**系统要求:** Android 7.0 或更高版本(手机、平板、Android TV)。
+
+从 [Releases](https://github.com/smma91/v2tun/releases) 下载 APK,并用 `SHA256SUMS.txt` 校验:
+
+| 文件 | 适用于 |
+|---|---|
+| `v2tun-<version>-android-arm64-v8a.apk` | 几乎所有手机和较新的电视 |
+| `v2tun-<version>-android-armeabi-v7a.apk` | 较旧的手机和大多数电视盒子 / 电视棒 |
+| `v2tun-<version>-android-universal.apk` | 任何设备(体积更大) |
+| `v2tun-<version>-android-x86_64.apk` | 模拟器和 x86 设备 |
+
+打开文件即可安装(如 Android 询问,请允许从此来源安装)。在电视上,可用 U 盘或 *Send files to TV* 等应用传输 APK,或用 `adb install` 安装。
+
+首次连接时 Android 会请求允许 VPN。如需断网保护(Kill switch),在 v2tun 中打开 **设置 → Kill switch**(会跳转到 Android 的 VPN 设置),开启*始终开启的 VPN* 和*屏蔽未使用 VPN 的连接*。
 
 ## 从源码构建
 

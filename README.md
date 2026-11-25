@@ -32,6 +32,7 @@
 | ⚡ **All modern protocols** | VLESS Reality / XHTTP, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard, NaiveProxy, OpenVPN, AnyConnect and more. |
 | 🚀 **Always the fastest server** | Ping, real delay and speed test, plus "Auto" mode that switches servers without dropping your downloads. |
 | 🔌 **Works with v2rayN** | Already use v2rayN? v2tun finds it and tunnels its proxy for the whole system. |
+| 📱 **Phone and TV too** | An Android app (phones, tablets and Android TV) with the same servers, QR import and sharing. |
 | 🧩 **Simple and free** | One small program, a clean dark interface in 4 languages, open source (GPL-3.0). |
 
 ## Features
@@ -60,6 +61,15 @@
 ### 🧭 Control
 - **Split tunneling** by app and by domain / IP range, in "exclude" or "include" mode.
 - **Smart QUIC handling:** when your server cannot carry UDP, apps switch to TCP at once instead of hanging.
+
+### 📱 Android and Android TV
+- The same protocols and subscriptions; add servers from the clipboard, by **scanning a QR code** (camera or image) or by sharing a link to v2tun.
+- **Share any server or subscription** as a QR code or link.
+- Live speed, exit IP with country, server ping, Quick Settings tile, auto-connect at boot.
+- **Local proxy** for other devices on the same Wi-Fi or on the phone's hotspot.
+- Android TV: made for the remote (D-pad), with a TV banner on the home screen.
+- Battery friendly: live statistics only while the app is on screen, the core sleeps in Doze.
+- Android 7.0 or newer.
 
 ### 🖥️ Desktop
 - Tray icon, start at login (no password or UAC prompt), auto-connect.
@@ -120,6 +130,28 @@ Notes:
 - Settings, servers and the log are in `~/.config/v2tun` (mode 0700).
 - Uninstall: remove the package, or `sudo ./install.sh --uninstall`.
 
+## Android and Android TV
+
+**Requirements:** Android 7.0 or newer (phones, tablets, Android TV).
+
+Download the APK from [Releases](../../releases) and check it against
+`SHA256SUMS.txt`:
+
+| File | For |
+|---|---|
+| `v2tun-<version>-android-arm64-v8a.apk` | almost all phones and newer TVs |
+| `v2tun-<version>-android-armeabi-v7a.apk` | older phones and most TV boxes / sticks |
+| `v2tun-<version>-android-universal.apk` | any device (larger download) |
+| `v2tun-<version>-android-x86_64.apk` | emulators and x86 devices |
+
+Open the file to install it (allow installing from this source when Android
+asks). On a TV, copy the APK with a USB stick or an app such as *Send files to
+TV*, or install it with `adb install`.
+
+The first time you connect, Android asks to allow the VPN. For a kill switch,
+open **Settings → Kill switch** in v2tun (it leads to Android's VPN settings)
+and turn on *Always-on VPN* and *Block connections without VPN*.
+
 ## Usage
 
 1. Either add servers on the **Servers** tab (paste a link or subscription),
@@ -153,6 +185,14 @@ it. `build/linux/package.sh <version>` makes the `.deb`, `.rpm`, AppImage and
 `tar.gz` (needs [nfpm](https://nfpm.goreleaser.com) and
 [appimagetool](https://github.com/AppImage/appimagetool)).
 
+**Android** — Go 1.26, JDK 17+, the Android SDK and NDK. First the Go library
+(`mobile/` and sing-box's libbox, built with gomobile), then the APKs:
+
+```sh
+bash build/android/build-aar.sh          # Windows: build\android\build-aar.ps1
+cd android && ./gradlew assembleRelease  # APKs in android/app/build/outputs/apk/
+```
+
 ### Tests
 
 ```powershell
@@ -180,9 +220,12 @@ strings that have no translation yet; add them to `tools/tr-extra.json`
 cmd/v2tun/            the application (Go, package main)
   ├─ frontend/        UI (plain HTML / CSS / JS) and translations (i18n.json)
   └─ assets/          embedded files: wintun.dll, libcronet.dll, tray icons
-internal/             code shared with the mobile apps: i18n, profile (links, subscriptions, server list)
+internal/             code shared with the mobile apps: i18n, profile (links, subscriptions, server list), netcheck (exit IP)
+mobile/               Go side of the Android app (gomobile): servers, settings, sing-box configuration
+android/              Android / Android TV app (Kotlin, Jetpack Compose, VpnService)
 build/windows/        app icon and manifest for the Windows resource
 build/linux/          Linux packaging: .deb/.rpm (nfpm), AppImage, tar.gz installer
+build/android/        builds the Go library for Android (gomobile)
 docs/                 test checklist, release guide, translations of this README, screenshots
 tools/                icon generator, translation and license-notice helpers
 .github/              CI build / release workflow, issue templates
@@ -198,7 +241,7 @@ routes, process lookup, system proxy, time zone, autostart and the watchdog.
 ## Releasing
 
 See [docs/RELEASE.md](docs/RELEASE.md). Pushing a tag such as `v1.0.0` makes the GitHub
-Actions workflow build both platforms and create a draft release with all
+Actions workflow build all platforms (Windows, Linux, Android) and create a draft release with all
 files and checksums.
 
 ## Feedback

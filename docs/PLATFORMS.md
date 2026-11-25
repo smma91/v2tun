@@ -4,6 +4,25 @@ Plan for the mobile versions: which desktop features make sense on each
 platform. Legend: ✅ full · ⚠️ limited / different · ❌ not possible ·
 ➖ not needed · ➡️ done differently.
 
+## The Android app today (v0.12.0, first version)
+
+In the app: system-wide tunnel (VpnService), FakeIP remote DNS, QUIC refused at
+once, IPv6 / DNS leak guard, servers from links / subscriptions / clipboard /
+QR codes (camera or image) / shared text, subscription update, Auto (fastest)
+with failover, TCP ping, sharing a server or subscription as a QR code or
+link, live speed and exit IP, local proxy for other devices (Wi-Fi / hotspot),
+excluded domains and IP ranges, Quick Settings tile, connect at boot, the
+kill switch through Android's *Always-on VPN* settings, Android TV layout for
+the remote, 4 languages.
+
+Not yet: picking apps for split tunneling (the setting exists, the screen does
+not), the "include only" domain mode, real-delay and speed tests, a log screen,
+the battery optimisation exemption prompt, sending a server from the phone to
+the TV directly (today: the phone scans the TV's QR code, or the other way
+round). NaiveProxy servers are not supported on Android yet.
+
+The tables below are the full plan.
+
 ## 1. Tunnel and protection
 
 | Feature | Windows | Linux | Android | Android TV | iOS | Notes |
@@ -75,10 +94,10 @@ platform. Legend: ✅ full · ⚠️ limited / different · ❌ not possible ·
 
 ## Order of work
 
-1. Move the shared code into a library package (desktop keeps working,
+1. ✅ Move the shared code into a library package (desktop keeps working,
    checked by its tests).
-2. Android app: connect, servers, subscriptions, tests, split tunneling,
+2. ✅ (first version, see above) Android app: connect, servers, subscriptions, tests, split tunneling,
    notification, Quick Settings tile, QR import, proxy for other devices on
    the same Wi-Fi or the phone's hotspot.
-3. Android TV: remote-friendly interface, receiving servers from a phone.
-4. Release pipeline: signed APKs built by GitHub Actions.
+3. ✅ (first version) Android TV: remote-friendly interface; receiving servers from a phone is still to do.
+4. ✅ Release pipeline: signed APKs built by GitHub Actions.
