@@ -82,6 +82,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var statusClient: CommandClient? = null
+    @Volatile private var logClient: CommandClient? = null
     private var lastStatusAt = 0L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -110,6 +111,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 lookUpExit()
             } catch (e: Throwable) {
                 Log.e(TAG, "start", e)
+                CoreLog.add(listOf(CoreLog.LEVEL_ERROR to (e.message ?: e.toString())))
                 cleanup()
                 Vpn.set(Status.STOPPED, e.message ?: e.toString())
                 stopForegroundCompat()
@@ -131,6 +133,8 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private fun cleanup() {
         runCatching { statusClient?.disconnect() }
         statusClient = null
+        runCatching { logClient?.disconnect() }
+        logClient = null
         if (idleListening) { runCatching { unregisterReceiver(idleReceiver) }; idleListening = false }
         runCatching { server?.closeService() }
         runCatching { server?.close() }
@@ -170,7 +174,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         idleListening = true
     }
 
-    /** Live speed is only collected while the app is on screen. */
+    /** Live speed is only collected while the app is on screen, the log only while the Log screen is open. */
     @Synchronized
     fun updateWatching() {
         val want = Vpn.status.value == Status.STARTED && Vpn.uiVisible
@@ -182,6 +186,20 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             statusClient = null
             thread { runCatching { c?.disconnect() } }
         }
+        val wantLog = want && CoreLog.visible
+        if (wantLog && logClient == null) {
+            watchLog()
+        } else if (!wantLog && logClient != null) {
+            val c = logClient
+            logClient = null
+            thread { runCatching { c?.disconnect() } }
+        }
+    }
+
+    /** Asks the core to forget its saved log lines (the Log screen's "Clear"). */
+    fun clearLog() {
+        val c = logClient ?: return
+        thread { runCatching { c.clearLogs() } }
     }
 
     // ---- live traffic and exit IP (shown on the main screen) ----
@@ -220,6 +238,36 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         }, o)
         statusClient = c
         thread(name = "v2tun-status") { runCatching { c.connect() }.onFailure { Log.w(TAG, "status", it) } }
+    }
+
+    /** The core's log for the Log screen (it first sends the lines it kept, after a reset). */
+    private fun watchLog() {
+        val o = CommandClientOptions()
+        o.addCommand(Libbox.CommandLog)
+        var self: CommandClient? = null
+        val c = Libbox.newCommandClient(object : CommandClientHandler {
+            override fun clearLogs() {
+                if (logClient === self) CoreLog.reset()
+            }
+            override fun writeLogs(messageList: LogIterator?) {
+                val it = messageList ?: return
+                val entries = ArrayList<Pair<Int, String>>()
+                while (it.hasNext()) it.next().let { e -> entries += e.level to (e.message ?: "") }
+                if (logClient === self) CoreLog.add(entries)
+            }
+            override fun writeStatus(message: StatusMessage) {}
+            override fun connected() {}
+            override fun disconnected(message: String?) {}
+            override fun initializeClashMode(modeList: StringIterator?, currentMode: String?) {}
+            override fun setDefaultLogLevel(level: Int) {}
+            override fun updateClashMode(newMode: String?) {}
+            override fun writeConnectionEvents(events: ConnectionEvents?) {}
+            override fun writeGroups(message: OutboundGroupIterator?) {}
+            override fun writeOutbounds(message: OutboundGroupItemIterator?) {}
+        }, o)
+        self = c
+        logClient = c
+        thread(name = "v2tun-log") { runCatching { c.connect() }.onFailure { Log.w(TAG, "log", it) } }
     }
 
     private fun lookUpExit() {

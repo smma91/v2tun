@@ -13,13 +13,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
@@ -32,13 +37,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.smma91.v2tun.tr
 
 /**
  * Clickable, with a press effect and a visible focus ring for the TV remote.
@@ -95,6 +104,7 @@ fun ItemRow(
     icon: Painter? = null,
     iconTint: Color = Accent,
     onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
     end: (@Composable () -> Unit)? = null,
 ) {
     val body = @Composable {
@@ -122,8 +132,58 @@ fun ItemRow(
             }
         }
     }
-    if (onClick != null) Tappable(Modifier.fillMaxWidth(), RoundedCornerShape(16.dp), onClick = onClick) { body() }
+    if (onClick != null) Tappable(modifier.fillMaxWidth(), RoundedCornerShape(16.dp), onClick = onClick) { body() }
     else body()
+}
+
+/** A highlighted note (e.g. "applies on the next connection"). */
+@Composable
+fun Notice(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+            .background(Warn.copy(alpha = 0.12f)).border(1.dp, Warn.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+            .padding(12.dp),
+        color = Color(0xFFFCD34D), fontSize = 13.sp,
+    )
+}
+
+/** The top of a sub-page: a back button (its own focus stop), the title and actions at the end. */
+@Composable
+fun PageHeader(
+    title: String,
+    onBack: () -> Unit,
+    backFocus: FocusRequester? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Tappable(
+            Modifier.size(44.dp).then(if (backFocus != null) Modifier.focusRequester(backFocus) else Modifier),
+            CircleShape, onClick = onBack,
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, tr("Back"), Modifier.size(22.dp), tint = TextMain)
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            title, Modifier.weight(1f), color = TextMain, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        actions()
+    }
+}
+
+/** A small text button with an icon (its own focus stop on TV). */
+@Composable
+fun TextAction(icon: Painter, label: String, onClick: () -> Unit) {
+    Tappable(shape = RoundedCornerShape(99.dp), onClick = onClick) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, Modifier.size(16.dp), tint = Accent)
+            Spacer(Modifier.width(6.dp))
+            Text(label, color = Accent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        }
+    }
 }
 
 /** A settings row with a switch; the whole row toggles (one focus stop on TV). */
