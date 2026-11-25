@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,10 +21,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
@@ -35,14 +39,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
@@ -63,21 +71,33 @@ import java.net.NetworkInterface
 
 @Composable
 fun SettingsScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
+    // A sub-page ("apps" or "log") open over the settings, and the row it was opened from.
+    var page by rememberSaveable { mutableStateOf("") }
+    var from by rememberSaveable { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val appsFocus = remember { FocusRequester() }
+    val logFocus = remember { FocusRequester() }
+    BackHandler(enabled = page.isNotEmpty()) { page = "" }
+    when (page) {
+        "apps" -> { AppsScreen { page = ""; refresh() }; return }
+        "log" -> { LogScreen { page = "" }; return }
+    }
+    // Back from a sub-page: the TV remote's focus returns to its row.
+    LaunchedEffect(Unit) {
+        when (from) {
+            "apps" -> runCatching { appsFocus.requestFocus() }
+            "log" -> runCatching { logFocus.requestFocus() }
+        }
+        from = ""
+    }
+
     val s = remember(version) { Store.settings() }
     val status by Vpn.status.collectAsState()
     val save = { change: (org.json.JSONObject) -> Unit -> Store.saveSettings(change); refresh() }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
         if (status == Status.STARTED) {
-            item {
-                Text(
-                    tr("Changes in this section apply on the next connection"),
-                    Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(14.dp))
-                        .background(Warn.copy(alpha = 0.12f)).border(1.dp, Warn.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
-                        .padding(12.dp),
-                    color = Color(0xFFFCD34D), fontSize = 13.sp,
-                )
-            }
+            item { Notice(tr("Changes in this section apply on the next connection"), Modifier.padding(top = 4.dp)) }
         }
 
         item { SectionTitle(tr("Language")) }
@@ -159,6 +179,32 @@ fun SettingsScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
             )
         }
 
+        item { SectionTitle(tr("Split tunneling")) }
+        item {
+            val apps = s.optJSONArray("apps").strings()
+            Group({
+                ItemRow(
+                    tr("Apps"),
+                    when {
+                        apps.isEmpty() -> tr("The list is empty; all apps go through the tunnel")
+                        s.optString("appMode") == "include" -> tr("Other apps go direct")
+                        else -> tr("Listed apps go direct")
+                    },
+                    painterResource(R.drawable.ic_apps),
+                    onClick = { from = "apps"; page = "apps" },
+                    modifier = Modifier.focusRequester(appsFocus),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (apps.isNotEmpty()) {
+                            Pill(num(apps.size), Accent)
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted)
+                    }
+                }
+            })
+        }
+
         item { SectionTitle(tr("Domains & IPs")) }
         item {
             Panel {
@@ -177,6 +223,17 @@ fun SettingsScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
                     Toast.makeText(activity, tr("Saved"), Toast.LENGTH_SHORT).show()
                 }) { Text(tr("Save")) }
             }
+        }
+
+        item { Spacer(Modifier.height(18.dp)) }
+        item {
+            Group({
+                ItemRow(
+                    tr("Logs"), null, rememberVectorPainter(Icons.AutoMirrored.Filled.List), Muted,
+                    onClick = { from = "log"; page = "log" },
+                    modifier = Modifier.focusRequester(logFocus),
+                ) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted) }
+            })
         }
 
         item {
