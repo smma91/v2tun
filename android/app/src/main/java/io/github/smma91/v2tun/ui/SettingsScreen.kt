@@ -48,6 +48,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -209,10 +217,26 @@ fun SettingsScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
         item {
             Panel {
                 Text(tr("Everything through the tunnel, except these"), color = Muted, fontSize = 13.sp)
+                val focusManager = LocalFocusManager.current
+                val keyboard = LocalSoftwareKeyboardController.current
                 var domains by remember(version) { mutableStateOf(s.optJSONArray("domains").strings().joinToString("\n")) }
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
-                    domains, { domains = it }, Modifier.fillMaxWidth().heightIn(min = 120.dp),
+                    domains, { domains = it },
+                    Modifier.fillMaxWidth().heightIn(min = 120.dp).onPreviewKeyEvent { e ->
+                        // A TV remote's up / down leave the box (it would trap the focus otherwise).
+                        val dir = when (e.key) {
+                            Key.DirectionDown -> FocusDirection.Down
+                            Key.DirectionUp -> FocusDirection.Up
+                            else -> null
+                        }
+                        val remote = e.nativeKeyEvent.isFromSource(android.view.InputDevice.SOURCE_DPAD)
+                        if (dir != null && remote && e.type == KeyEventType.KeyDown) {
+                            keyboard?.hide()
+                            focusManager.moveFocus(dir)
+                        }
+                        dir != null && remote
+                    },
                     placeholder = { Text("example.com\n.ir\n192.168.0.0/16", color = Muted) },
                     colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Line, focusedBorderColor = Accent),
                     textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp),
