@@ -71,15 +71,27 @@ func (e *Engine) Running() bool {
 // conflict reports another TUN (e.g. v2rayN's own TUN mode) that already
 // captures the default route.
 func conflict() string {
+	c, _ := findConflict()
+	return c
+}
+
+// findConflict also tells whether the conflict was found only by the routes
+// (some other VPN) rather than by a known proxy client's adapter name.
+func findConflict() (name string, otherVPN bool) {
 	as, _ := listAdapters()
 	for _, a := range as {
 		d := strings.ToLower(a.Name + " " + a.Description)
 		if a.Up && a.Name != tunName && (strings.Contains(d, "singbox") || strings.Contains(d, "sing-tun") ||
 			strings.Contains(d, "mihomo") || strings.Contains(d, "meta tunnel") || strings.Contains(d, "clash")) {
-			return a.Name
+			return a.Name, false
 		}
 	}
-	return ""
+	if ifs, routes, err := netSnapshot(); err == nil {
+		if c := routeConflict(ifs, routes); c != "" {
+			return c, true
+		}
+	}
+	return "", false
 }
 
 func (e *Engine) Start(s Settings) (err error) {
@@ -88,7 +100,9 @@ func (e *Engine) Start(s Settings) (err error) {
 	if e.running {
 		return nil
 	}
-	if c := conflict(); c != "" {
+	if c, otherVPN := findConflict(); otherVPN {
+		return trErr("Another VPN or TUN is active (%s). Turn it off first", c)
+	} else if c != "" {
 		return trErr("v2rayN's TUN mode is on (%s). Turn it off in v2rayN first", c)
 	}
 	builtin := s.ProxySource == "builtin"
