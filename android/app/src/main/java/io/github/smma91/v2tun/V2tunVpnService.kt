@@ -288,7 +288,10 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 val caps = connectivity.getNetworkCapabilities(network)
                 val metered = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == false
                 Log.i(TAG, "network: $name ($index)")
+                val wasOffline = !Vpn.online.value
                 Vpn.online.value = true
+                // Back online (or another network): the exit may have changed.
+                if (Vpn.status.value == Status.STARTED && (wasOffline || Vpn.exit.value == null)) lookUpExit()
                 listener.updateDefaultInterface(name, index, metered, false)
             }
             // Android shows the VPN as using this network (metered, validated...).
