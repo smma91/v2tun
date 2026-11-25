@@ -15,8 +15,9 @@ import (
 // computer. (Windows' own DNS proxy on the shared adapter asks the real
 // network's resolvers, which the leak guard rightly blocks.)
 type dnsRelay struct {
-	udp *net.UDPConn
-	tcp net.Listener
+	udp    *net.UDPConn
+	tcp    net.Listener
+	onFail func(error)
 }
 
 func startDNSRelay(listen netip.Addr, upstream string, onQuery func(netip.Addr)) (*dnsRelay, error) {
@@ -62,6 +63,8 @@ func (r *dnsRelay) serveUDP(upstream string, onQuery func(netip.Addr)) {
 			m, err := c.Read(resp)
 			if err == nil {
 				r.udp.WriteToUDP(resp[:m], from)
+			} else if r.onFail != nil {
+				r.onFail(err)
 			}
 		}()
 	}

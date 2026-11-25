@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/netip"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -48,6 +49,14 @@ type handler struct {
 func (h *handler) watchHotspot(p netip.Prefix) {
 	h.hotspot.Store(&p)
 	h.hotspotSeen.Clear()
+}
+
+// noteShared: the first connection of hotspot devices through connection
+// sharing (logged once per destination port, so the log shows what works).
+func (h *handler) noteShared(m *M.Metadata) {
+	if _, seen := h.hotspotSeen.LoadOrStore("shared"+strconv.Itoa(int(m.DstPort)), true); !seen && h.logf != nil {
+		h.logf("info", "Hotspot devices' traffic reaches the tunnel (port %d)", m.DstPort)
+	}
 }
 
 func (h *handler) noteHotspot(src netip.Addr) {
@@ -162,6 +171,10 @@ func (h *handler) tcp(origin adapter.TCPConn) {
 	path := ownerPath(func() uint32 { return tcpOwner(m.SrcIP, m.SrcPort) })
 	core := isCorePath(path)
 	direct := core || r.appDirect(path)
+	shared := path == "" && h.hotspot.Load() != nil && tcpOwner(m.SrcIP, m.SrcPort) == 0
+	if shared {
+		h.noteShared(m)
+	}
 
 	// FakeIP: the destination stands for a domain; the server resolves it.
 	var host string
@@ -206,6 +219,9 @@ func (h *handler) tcp(origin adapter.TCPConn) {
 	}
 	cancel()
 	if err != nil {
+		if shared {
+			h.logf("warn", "Hotspot: connection to %s failed: %v", firstNonEmpty(host, m.DestinationAddress()), err)
+		}
 		h.dialFailed("TCP", m, direct, err)
 		return
 	}

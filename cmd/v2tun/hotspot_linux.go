@@ -72,7 +72,9 @@ func startAccessPoint(ssid, pass string) (*accessPoint, error) {
 
 // startDNS: NetworkManager's dnsmasq answers the devices (its questions are
 // captured into the tunnel), nothing to start.
-func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr)) error { return nil }
+func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr), onFail func(error)) error {
+	return nil
+}
 
 func (ap *accessPoint) Alive() bool {
 	out, _ := nmcli("-t", "-f", "NAME", "connection", "show", "--active")

@@ -51,7 +51,11 @@ func (h *hotspotManager) Start(s Settings, e *Engine, logf func(string, string, 
 		ap, err := startAccessPoint(s.HotspotSSID, s.HotspotPass)
 		if err == nil {
 			if err = e.routeHotspot(ap); err == nil {
-				if err = ap.startDNS(hotspotDNS(s), onDNS); err != nil {
+				var failLogged sync.Once
+				onFail := func(err error) {
+					failLogged.Do(func() { logf("warn", "Hotspot DNS: no answer through the tunnel (%v)", err) })
+				}
+				if err = ap.startDNS(hotspotDNS(s), onDNS, onFail); err != nil {
 					e.unrouteHotspot(ap)
 				}
 			}

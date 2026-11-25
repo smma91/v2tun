@@ -186,13 +186,14 @@ func (ap *accessPoint) ensureDHCP() error {
 
 // startDNS answers the devices' DNS on the hotspot address (after connection
 // sharing is set up, which may reconfigure the adapter).
-func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr)) error {
+func (ap *accessPoint) startDNS(upstream string, onQuery func(netip.Addr), onFail func(error)) error {
 	if ap.dns != nil {
 		return nil
 	}
 	var err error
 	for i := 0; i < 10; i++ { // the address may come back a moment after ICS reconfigured it
 		if ap.dns, err = startDNSRelay(ap.addr, upstream, onQuery); err == nil {
+			ap.dns.onFail = onFail
 			return nil
 		}
 		time.Sleep(500 * time.Millisecond)
