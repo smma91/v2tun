@@ -26,6 +26,9 @@ object Vpn {
     internal val traffic = MutableStateFlow<Traffic?>(null)
     internal val exit = MutableStateFlow<Exit?>(null)
 
+    /** False while the device has no real network (Wi-Fi / mobile data off). */
+    val online = MutableStateFlow(true)
+
     var since = 0L
         private set
 

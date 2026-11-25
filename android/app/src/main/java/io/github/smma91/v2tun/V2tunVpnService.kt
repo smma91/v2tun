@@ -138,6 +138,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     override fun onDestroy() {
         instance = null
+        Vpn.online.value = true
         cleanup()
         if (Vpn.status.value != Status.STOPPED) Vpn.set(Status.STOPPED)
         super.onDestroy()
@@ -277,26 +278,33 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         var current: Network? = null
         val report: (Network?) -> Unit = { network ->
             current = network
-            val lp = network?.let { connectivity.getLinkProperties(it) }
-            val name = lp?.interfaceName
+            val name = network?.let { connectivity.getLinkProperties(it)?.interfaceName }
             if (network == null || name == null) {
+                Log.i(TAG, "network: none")
+                Vpn.online.value = false
                 listener.updateDefaultInterface("", -1, false, false)
             } else {
                 val index = runCatching { JavaInterface.getByName(name)?.index ?: -1 }.getOrDefault(-1)
                 val caps = connectivity.getNetworkCapabilities(network)
                 val metered = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) == false
+                Log.i(TAG, "network: $name ($index)")
+                Vpn.online.value = true
                 listener.updateDefaultInterface(name, index, metered, false)
             }
             // Android shows the VPN as using this network (metered, validated...).
             runCatching { setUnderlyingNetworks(network?.let { arrayOf(it) }) }
         }
+        // Right away, so the core does not start without a network.
+        report(realNetwork(null))
         val cb = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) = report(network)
+            override fun onAvailable(network: Network) {
+                if (network != current) report(network)
+            }
             override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) {
-                if (network == current) report(network)
+                if (network == current || current == null) report(network)
             }
             override fun onLost(network: Network) {
-                if (network == current) report(null)
+                if (network == current) report(realNetwork(network))
             }
         }
         networkCallback = cb
@@ -305,7 +313,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
             .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
-        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val handler = android.os.Handler(monitorThread.looper)
         if (Build.VERSION.SDK_INT >= 31) {
             connectivity.registerBestMatchingNetworkCallback(request, cb, handler)
         } else {
@@ -313,6 +321,23 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         }
     }
 
+    private val monitorThread by lazy { android.os.HandlerThread("v2tun-network").apply { start() } }
+
+    /** A real network with internet (Wi-Fi / Ethernet before mobile data), other than [except]. */
+    @Suppress("DEPRECATION")
+    private fun realNetwork(except: Network?): Network? {
+        val usable = connectivity.allNetworks.filter { n ->
+            n != except && connectivity.getNetworkCapabilities(n)?.let { c ->
+                c.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    c.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN) &&
+                    c.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+            } == true && connectivity.getLinkProperties(n)?.interfaceName != null
+        }
+        fun caps(n: Network) = connectivity.getNetworkCapabilities(n)
+        return usable.firstOrNull { caps(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true || caps(it)?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true }
+            ?: usable.firstOrNull { caps(it)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true }
+            ?: usable.firstOrNull()
+    }
     override fun closeDefaultInterfaceMonitor(listener: InterfaceUpdateListener) {
         networkCallback?.let { runCatching { connectivity.unregisterNetworkCallback(it) } }
         networkCallback = null

@@ -11,6 +11,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +42,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -62,122 +67,154 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(activity: MainActivity, version: Int, openServers: () -> Unit) {
     val status by Vpn.status.collectAsState()
-    val error by Vpn.error.collectAsState()
     val list = remember(version, status) { Store.servers() }
+    val onPower = {
+        when {
+            status == Status.STARTED || status == Status.STARTING || status == Status.STOPPING -> Vpn.stop(activity)
+            list.servers.isEmpty() -> openServers()
+            else -> activity.connect()
+        }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (maxWidth >= 680.dp) {
+            // TV / landscape tablet: the button on one side, the details on the other.
+            Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    PowerSection(status, tv = true, onPower)
+                }
+                Spacer(Modifier.width(24.dp))
+                Column(
+                    Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(vertical = 24.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) { Details(status, list, openServers) }
+            }
+        } else {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(Modifier.height(20.dp))
+                PowerSection(status, tv = false, onPower)
+                Spacer(Modifier.height(24.dp))
+                Box(Modifier.widthIn(max = 560.dp)) { Column { Details(status, list, openServers) } }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PowerSection(status: Status, tv: Boolean, onClick: () -> Unit) {
+    val error by Vpn.error.collectAsState()
     val on = status == Status.STARTED
     val busy = status == Status.STARTING || status == Status.STOPPING
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(on) { while (on) { now = System.currentTimeMillis(); delay(1000) } }
 
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(20.dp))
-        PowerButton(status) {
-            when {
-                on || busy -> Vpn.stop(activity)
-                list.servers.isEmpty() -> openServers()
-                else -> activity.connect()
-            }
-        }
-        Spacer(Modifier.height(8.dp))
+    PowerButton(status, focusFirst = tv, onClick = onClick)
+    Spacer(Modifier.height(8.dp))
+    Text(
+        when (status) {
+            Status.STARTED -> tr("Connected")
+            Status.STARTING -> tr("Connecting…")
+            Status.STOPPING -> tr("Disconnecting…")
+            Status.STOPPED -> tr("Not connected")
+        },
+        fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextMain,
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        when {
+            on -> duration((now - Vpn.since) / 1000)
+            busy -> " "
+            tv -> tr("Press OK to connect")
+            else -> tr("Tap to connect")
+        },
+        color = Muted, fontSize = 15.sp,
+    )
+    val online by Vpn.online.collectAsState()
+    if (on && !online) {
+        Spacer(Modifier.height(12.dp))
+        Pill(tr("This device has no internet (Wi-Fi and mobile data are off or out of reach)"), Warn, dot = true)
+    }
+    error?.let {
+        Spacer(Modifier.height(16.dp))
         Text(
-            when (status) {
-                Status.STARTED -> tr("Connected")
-                Status.STARTING -> tr("Connecting…")
-                Status.STOPPING -> tr("Disconnecting…")
-                Status.STOPPED -> tr("Not connected")
-            },
-            fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextMain,
+            it, Modifier.fillMaxWidth().widthIn(max = 560.dp).clip(RoundedCornerShape(14.dp))
+                .background(Bad.copy(alpha = 0.12f)).border(1.dp, Bad.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                .padding(12.dp),
+            color = Color(0xFFFCA5A5), fontSize = 13.sp,
         )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            if (on) duration((now - Vpn.since) / 1000) else if (busy) " " else tr("Tap to connect"),
-            color = Muted, fontSize = 15.sp,
-        )
-
-        error?.let {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                it, Modifier.fillMaxWidth().widthIn(max = 560.dp).clip(RoundedCornerShape(14.dp))
-                    .background(Bad.copy(alpha = 0.12f)).border(1.dp, Bad.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                    .padding(12.dp),
-                color = Color(0xFFFCA5A5), fontSize = 13.sp,
-            )
-        }
-
-        if (on) {
-            val traffic by Vpn.traffic.collectAsState()
-            val exit by Vpn.exit.collectAsState()
-            Spacer(Modifier.height(24.dp))
-            Row(Modifier.widthIn(max = 560.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Stat(R.drawable.ic_down, tr("Download"), traffic?.down, traffic?.downTotal, Ok, Modifier.weight(1f))
-                Stat(R.drawable.ic_up, tr("Upload"), traffic?.up, traffic?.upTotal, Accent, Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(10.dp))
-            Box(Modifier.widthIn(max = 560.dp)) {
-                Panel {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Card2),
-                            contentAlignment = Alignment.Center,
-                        ) { Text(exit?.country?.let { flag(it) } ?: "🌐", fontSize = 24.sp) }
-                        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                            Text(tr("Exit IP"), color = Muted, fontSize = 12.sp)
-                            Text(exit?.ip ?: "…", color = TextMain, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                            val where = exit?.let { e ->
-                                listOf(countryName(e.country), e.city, e.org).filter { it.isNotBlank() }.joinToString(" · ")
-                            }.orEmpty()
-                            if (where.isNotEmpty()) Text(where, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-        } else {
-            Spacer(Modifier.height(28.dp))
-        }
-        Box(Modifier.widthIn(max = 560.dp)) {
-            if (list.servers.isEmpty()) {
-                Panel {
-                    Text(tr("No servers yet. Add a link or subscription in the \"Servers\" tab."), color = Muted, fontSize = 14.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = openServers) { Text(tr("Add servers")) }
-                }
-            } else {
-                val sel = list.servers.firstOrNull { it.id == list.selected }
-                Tappable(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), onClick = openServers) {
-                    Panel {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Accent.copy(alpha = 0.14f)),
-                                contentAlignment = Alignment.Center,
-                            ) { Icon(painterResource(R.drawable.ic_servers), null, Modifier.size(22.dp), tint = Accent) }
-                            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                                Text(tr("Server"), color = Muted, fontSize = 12.sp)
-                                Text(
-                                    sel?.name ?: tr("Auto (fastest server)"), color = TextMain, fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    sel?.let { "${it.type} · ${it.addr}" } ?: tr("{0} servers").replace("{0}", num(list.servers.size)),
-                                    color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted)
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(24.dp))
     }
 }
 
+/** Speed, exit IP and the selected server. */
+@Composable
+private fun Details(status: Status, list: io.github.smma91.v2tun.ServerList, openServers: () -> Unit) {
+    if (status == Status.STARTED) {
+        val traffic by Vpn.traffic.collectAsState()
+        val exit by Vpn.exit.collectAsState()
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Stat(R.drawable.ic_down, tr("Download"), traffic?.down, traffic?.downTotal, Ok, Modifier.weight(1f))
+            Stat(R.drawable.ic_up, tr("Upload"), traffic?.up, traffic?.upTotal, Accent, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(10.dp))
+        Panel {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Card2),
+                    contentAlignment = Alignment.Center,
+                ) { Text(exit?.country?.let { flag(it) } ?: "🌐", fontSize = 24.sp) }
+                Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                    Text(tr("Exit IP"), color = Muted, fontSize = 12.sp)
+                    Text(exit?.ip ?: "…", color = TextMain, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    val where = exit?.let { e ->
+                        listOf(countryName(e.country), e.city, e.org).filter { it.isNotBlank() }.joinToString(" · ")
+                    }.orEmpty()
+                    if (where.isNotEmpty()) Text(where, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+    }
+    if (list.servers.isEmpty()) {
+        Panel {
+            Text(tr("No servers yet. Add a link or subscription in the \"Servers\" tab."), color = Muted, fontSize = 14.sp)
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = openServers) { Text(tr("Add servers")) }
+        }
+    } else {
+        val sel = list.servers.firstOrNull { it.id == list.selected }
+        Tappable(Modifier.fillMaxWidth(), RoundedCornerShape(20.dp), onClick = openServers) {
+            Panel {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Accent.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(painterResource(R.drawable.ic_servers), null, Modifier.size(22.dp), tint = Accent) }
+                    Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                        Text(tr("Server"), color = Muted, fontSize = 12.sp)
+                        Text(
+                            sel?.name ?: tr("Auto (fastest server)"), color = TextMain, fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            sel?.let { "${it.type} · ${it.addr}" } ?: tr("{0} servers").replace("{0}", num(list.servers.size)),
+                            color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted)
+                }
+            }
+        }
+    }
+}
 /** The big round button: grey when off, a spinning arc while connecting, green with a slow pulse when on. */
 @Composable
-private fun PowerButton(status: Status, onClick: () -> Unit) {
+private fun PowerButton(status: Status, focusFirst: Boolean, onClick: () -> Unit) {
+    val focus = remember { FocusRequester() }
+    if (focusFirst) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val on = status == Status.STARTED
     val busy = status == Status.STARTING || status == Status.STOPPING
     val color by animateColorAsState(
@@ -200,7 +237,7 @@ private fun PowerButton(status: Status, onClick: () -> Unit) {
                 }
             }
         }
-        Tappable(Modifier.size(168.dp), CircleShape, onClick = onClick) {
+        Tappable(Modifier.size(168.dp).focusRequester(focus), CircleShape, onClick = onClick) {
             Box(
                 Modifier.fillMaxSize().clip(CircleShape)
                     .background(Brush.verticalGradient(listOf(Card2, Card)))
