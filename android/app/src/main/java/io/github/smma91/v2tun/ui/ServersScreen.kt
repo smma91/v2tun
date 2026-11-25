@@ -79,6 +79,7 @@ fun ServersScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
     var updating by remember { mutableStateOf(false) }
     var pinging by remember { mutableStateOf(false) }
     var qrMenu by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf<Pair<String, String>?>(null) } // title, link
     SideEffect { activity.onAdded = refresh }
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) } // sub id, name
 
@@ -179,6 +180,9 @@ fun ServersScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
                             Text(meta, color = Muted, fontSize = 12.sp)
                             if (!info?.error.isNullOrEmpty()) Text(info!!.error, color = Bad, fontSize = 12.sp)
                         }
+                        if (!info?.url.isNullOrEmpty()) {
+                            IconTap(painterResource(R.drawable.ic_qr), tr("Share")) { sharing = (info!!.name.ifEmpty { tr("Subscription") }) to info.url }
+                        }
                         Tappable(Modifier.size(44.dp), CircleShape, onClick = {
                             removing = sub to (if (sub.isEmpty()) tr("Manual servers") else info?.name ?: sub)
                         }) {
@@ -189,7 +193,10 @@ fun ServersScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
                     }
                     servers.forEachIndexed { i, s ->
                         if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = Line)
-                        ServerRow(s.name, "${s.type} · ${s.addr}", if (s.delay != 0) s.delay else s.ping, list.selected == s.id, s.error) {
+                        ServerRow(
+                            s.name, "${s.type} · ${s.addr}", if (s.delay != 0) s.delay else s.ping, list.selected == s.id, s.error,
+                            onShare = if (s.link.isNotEmpty()) ({ sharing = s.name to s.link }) else null,
+                        ) {
                             if (s.error.isEmpty()) { Mobile.select(s.id); refresh() }
                         }
                     }
@@ -197,6 +204,8 @@ fun ServersScreen(activity: MainActivity, version: Int, refresh: () -> Unit) {
             }
         }
     }
+
+    sharing?.let { (title, link) -> ShareDialog(title, link) { sharing = null } }
 
     if (adding) AddDialog(activity, onDone = { adding = false; refresh() }, onCancel = { adding = false })
 
@@ -273,33 +282,44 @@ private fun ActionButton(
 @Composable
 private fun ServerRow(
     name: String, meta: String, delay: Int, selected: Boolean, error: String = "", alone: Boolean = false,
-    onClick: () -> Unit,
+    onShare: (() -> Unit)? = null, onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(if (alone) 20.dp else 14.dp)
-    Tappable(Modifier.fillMaxWidth(), shape, onClick = onClick) {
-        Row(
-            Modifier.fillMaxWidth()
-                .then(if (alone) Modifier.background(Card).border(1.dp, if (selected) Accent else Line, shape) else Modifier)
-                .background(if (selected) Accent.copy(alpha = 0.10f) else Color.Transparent)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier.size(22.dp).clip(CircleShape)
-                    .background(if (selected) Accent else Color.Transparent)
-                    .border(2.dp, if (selected) Accent else Line, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) { if (selected) Icon(Icons.Filled.Check, null, Modifier.size(14.dp), tint = Color.White) }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(name, color = if (error.isEmpty()) TextMain else Muted, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(meta, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (error.isNotEmpty()) Text(error, color = Bad, fontSize = 12.sp, maxLines = 2)
+    // The row and its QR button are separate focus stops (TV remote).
+    Row(
+        Modifier.fillMaxWidth()
+            .then(if (alone) Modifier.clip(shape).background(Card).border(1.dp, if (selected) Accent else Line, shape) else Modifier)
+            .background(if (selected) Accent.copy(alpha = 0.10f) else Color.Transparent),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Tappable(Modifier.weight(1f), shape, onClick = onClick) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier.size(22.dp).clip(CircleShape)
+                        .background(if (selected) Accent else Color.Transparent)
+                        .border(2.dp, if (selected) Accent else Line, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { if (selected) Icon(Icons.Filled.Check, null, Modifier.size(14.dp), tint = Color.White) }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(name, color = if (error.isEmpty()) TextMain else Muted, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(meta, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (error.isNotEmpty()) Text(error, color = Bad, fontSize = 12.sp, maxLines = 2)
+                }
+                when {
+                    delay > 0 -> Pill(num(delay) + " ms", if (delay < 300) Ok else if (delay < 800) Warn else Bad)
+                    delay < 0 -> Pill("✕", Bad)
+                }
             }
-            when {
-                delay > 0 -> Pill(num(delay) + " ms", if (delay < 300) Ok else if (delay < 800) Warn else Bad)
-                delay < 0 -> Pill("✕", Bad)
-            }
+        }
+        if (onShare != null) {
+            IconTap(painterResource(R.drawable.ic_qr), tr("Share"), onShare)
+            Spacer(Modifier.width(8.dp))
+        } else {
+            Spacer(Modifier.width(8.dp))
         }
     }
 }
@@ -319,6 +339,15 @@ private fun SmallAction(icon: Painter, label: String, busy: Boolean, onClick: ()
             Icon(icon, null, Modifier.size(16.dp).rotate(angle), tint = Accent)
             Spacer(Modifier.width(6.dp))
             Text(label, color = Accent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        }
+    }
+}
+/** A round icon button (its own focus stop on TV). */
+@Composable
+private fun IconTap(icon: Painter, label: String, onClick: () -> Unit) {
+    Tappable(Modifier.size(40.dp), CircleShape, onClick = onClick) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(icon, label, Modifier.size(20.dp), tint = Muted)
         }
     }
 }

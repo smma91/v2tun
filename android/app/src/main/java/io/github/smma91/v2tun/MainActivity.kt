@@ -83,6 +83,16 @@ class MainActivity : ComponentActivity() {
         setContent { AppUi(this) }
     }
 
+    override fun onStart() {
+        super.onStart()
+        Vpn.uiVisible = true
+    }
+
+    override fun onStop() {
+        Vpn.uiVisible = false
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShare(intent)

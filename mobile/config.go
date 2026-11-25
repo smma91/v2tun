@@ -26,6 +26,7 @@ func BuildConfig() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	lessTesting(outbounds)
 	cfg := buildConfig(s, outbounds, endpoints)
 	b, err := json.Marshal(cfg)
 	return string(b), err
@@ -171,4 +172,16 @@ func merge(a, b map[string]any) map[string]any {
 		out[k] = v
 	}
 	return out
+}
+
+// lessTesting: on a phone, measuring every server every 3 minutes wakes the
+// radio for nothing. "auto" re-tests every 10 minutes, and not at all after
+// 30 idle minutes (screen off, nothing using the tunnel).
+func lessTesting(outbounds []any) {
+	for _, o := range outbounds {
+		if m, ok := o.(map[string]any); ok && m["type"] == "urltest" {
+			m["interval"] = "10m"
+			m["idle_timeout"] = "30m"
+		}
+	}
 }

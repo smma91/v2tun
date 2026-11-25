@@ -26,6 +26,13 @@ object Vpn {
     internal val traffic = MutableStateFlow<Traffic?>(null)
     internal val exit = MutableStateFlow<Exit?>(null)
 
+    /** Whether the app is on screen (live speed is collected only then, to save battery). */
+    var uiVisible = false
+        set(v) {
+            field = v
+            V2tunVpnService.instance?.updateWatching()
+        }
+
     /** False while the device has no real network (Wi-Fi / mobile data off). */
     val online = MutableStateFlow(true)
 

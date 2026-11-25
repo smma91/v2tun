@@ -64,3 +64,11 @@ func TestNoServers(t *testing.T) {
 	}
 	_ = profile.TestURL
 }
+
+func TestLessTesting(t *testing.T) {
+	obs := []any{map[string]any{"type": "urltest", "interval": "3m"}, map[string]any{"type": "vless"}}
+	lessTesting(obs)
+	if obs[0].(map[string]any)["interval"] != "10m" || obs[1].(map[string]any)["interval"] != nil {
+		t.Fatal(obs)
+	}
+}

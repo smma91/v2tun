@@ -4,7 +4,11 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.PowerManager
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
@@ -78,6 +82,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var statusClient: CommandClient? = null
+    private var lastStatusAt = 0L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -100,7 +105,8 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 s.startOrReloadService(config, OverrideOptions())
                 Vpn.set(Status.STARTED)
                 showNotification()
-                watchTraffic()
+                listenForIdle()
+                updateWatching()
                 lookUpExit()
             } catch (e: Throwable) {
                 Log.e(TAG, "start", e)
@@ -125,6 +131,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private fun cleanup() {
         runCatching { statusClient?.disconnect() }
         statusClient = null
+        if (idleListening) { runCatching { unregisterReceiver(idleReceiver) }; idleListening = false }
         runCatching { server?.closeService() }
         runCatching { server?.close() }
         server = null
@@ -144,17 +151,58 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         super.onDestroy()
     }
 
+    // ---- battery ----
+
+    // Deep sleep (Doze): the core pauses its timers and keep-alives, and wakes
+    // up when the device does (as sing-box's own app does).
+    private var idleListening = false
+    private val idleReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val s = server ?: return
+            val idle = getSystemService(PowerManager::class.java).isDeviceIdleMode
+            runCatching { if (idle) s.pause() else s.wake() }
+        }
+    }
+
+    private fun listenForIdle() {
+        if (Build.VERSION.SDK_INT < 23 || idleListening) return
+        registerReceiver(idleReceiver, IntentFilter(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED))
+        idleListening = true
+    }
+
+    /** Live speed is only collected while the app is on screen. */
+    @Synchronized
+    fun updateWatching() {
+        val want = Vpn.status.value == Status.STARTED && Vpn.uiVisible
+        if (want && statusClient == null) {
+            lastStatusAt = 0L
+            watchTraffic()
+        } else if (!want && statusClient != null) {
+            val c = statusClient
+            statusClient = null
+            thread { runCatching { c?.disconnect() } }
+        }
+    }
+
     // ---- live traffic and exit IP (shown on the main screen) ----
 
     private fun watchTraffic() {
         val o = CommandClientOptions()
         o.addCommand(Libbox.CommandStatus)
-        o.addCommand(Libbox.CommandLog)
+        // The core's log in logcat: debug builds only.
+        if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) o.addCommand(Libbox.CommandLog)
         o.statusInterval = 1_000_000_000L // 1 s
         val c = Libbox.newCommandClient(object : CommandClientHandler {
             override fun writeStatus(message: StatusMessage) {
                 if (Vpn.status.value != Status.STARTED) return
-                Vpn.traffic.value = Traffic(message.uplink, message.downlink, message.uplinkTotal, message.downlinkTotal)
+                // Speed from the change in the totals (the core only reports totals here).
+                val now = System.nanoTime()
+                val prev = Vpn.traffic.value
+                val secs = if (lastStatusAt == 0L) 0.0 else (now - lastStatusAt) / 1e9
+                lastStatusAt = now
+                val up = if (prev != null && secs > 0.2) ((message.uplinkTotal - prev.upTotal).coerceAtLeast(0) / secs).toLong() else 0L
+                val down = if (prev != null && secs > 0.2) ((message.downlinkTotal - prev.downTotal).coerceAtLeast(0) / secs).toLong() else 0L
+                Vpn.traffic.value = Traffic(up, down, message.uplinkTotal, message.downlinkTotal)
             }
             override fun connected() {}
             override fun disconnected(message: String?) {}
