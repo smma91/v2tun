@@ -1,10 +1,22 @@
 <div dir="rtl">
 
-# v2tun
+<h1 align="center">v2tun</h1>
 
-[English](../README.md) | [فارسی](README.fa.md) | **العربية** | [中文](README.zh.md)
+<p align="center">
+  <b>بنقرة واحدة تمر كل تطبيقات حاسوبك عبر الوكيل، مع مفتاح إيقاف حقيقي.</b><br>
+  نفق شامل لنظامَي <b>Windows</b> و<b>Linux</b>، بنواة مدمجة أو عبر v2rayN الذي تستخدمه.
+</p>
 
-نفق شامل مع مفتاح إيقاف (Kill Switch) لنظامَي **Windows وLinux**. يمرّر v2tun حركة جميع التطبيقات على الحاسوب عبر وكيل (Proxy)، إما بنواته المدمجة (الخوادم والاشتراكات داخل التطبيق) أو عبر منفذ SOCKS لبرنامج [v2rayN](https://github.com/2dust/v2rayN) أثناء تشغيله.
+<p align="center">
+  <a href="https://github.com/smma91/v2tun/releases/latest"><img src="https://img.shields.io/github/v/release/smma91/v2tun?label=download&color=2563eb" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-0f172a" alt="Windows | Linux">
+  <a href="https://github.com/smma91/v2tun/releases"><img src="https://img.shields.io/github/downloads/smma91/v2tun/total?color=16a34a" alt="Downloads"></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/github/license/smma91/v2tun?color=64748b" alt="License"></a>
+</p>
+
+<p align="center">
+  <a href="../README.md">English</a> | <a href="README.fa.md">فارسی</a> | <b>العربية</b> | <a href="README.zh.md">中文</a>
+</p>
 
 <p align="center">
   <img src="screenshots/connect.png" width="260" alt="Connect">
@@ -12,30 +24,53 @@
   <img src="screenshots/settings.png" width="260" alt="Settings">
 </p>
 
+## لماذا v2tun؟
+
+| | |
+|---|---|
+| 🌐 **كل التطبيقات، لا المتصفح فقط** | الألعاب والمراسلة والتحديثات والطرفية تمر كلها عبر النفق، دون إعداد وكيل لكل تطبيق. |
+| 🛡️ **لا شيء يتسرب** | مفتاح إيقاف، وحماية من تسرب IPv6 وDNS، وDNS عن بُعد: اختبارات التسرب لا تُظهر إلا خادمك. |
+| 📶 **شاركه عبر Wi-Fi** | حوّل حاسوبك إلى نقطة اتصال؛ الهواتف والحواسيب المتصلة بها تمر عبر النفق أيضًا. |
+| ⚡ **كل البروتوكولات الحديثة** | VLESS Reality / XHTTP وVMess وTrojan وShadowsocks وHysteria2 وTUIC وWireGuard وNaiveProxy وOpenVPN وAnyConnect وغيرها. |
+| 🚀 **دائمًا أسرع خادم** | Ping وزمن الاستجابة الحقيقي واختبار السرعة، ووضع «تلقائي» يبدّل الخادم دون قطع التنزيلات. |
+| 🔌 **يعمل مع v2rayN** | إن كنت تستخدم v2rayN فإن v2tun يجده ويمرر وكيله للنظام كله. |
+| 🧩 **بسيط ومجاني** | برنامج صغير بواجهة داكنة أنيقة بأربع لغات، مفتوح المصدر (GPL-3.0). |
+
 ## الميزات
 
-**النفق والحماية**
-- نفق TUN شامل (Wintun) لكل تطبيقات Windows، وليس للمتصفح فقط.
-- مفتاح إيقاف (Windows Filtering Platform): إذا انقطع النفق أو الوكيل يبقى الإنترنت محجوبًا بدل الرجوع إلى الاتصال الحقيقي.
-- حماية من تسرب IPv6 وDNS، حتى عند إيقاف مفتاح الإيقاف.
-- DNS عن بُعد (FakeIP): لا تغادر طلبات DNS الحاسوب، ويحلّ الخادم الأسماء في بلد الخروج، فتظهر اختبارات تسرب DNS نظيفة.
-- اختبار تسرب IP وWebRTC داخل التطبيق مع عرض عنوان IP الخارجي.
-- اختياري: مطابقة المنطقة الزمنية لـ Windows مع بلد الخادم.
-- أمان عند الإغلاق المفاجئ: عملية مراقبة تعيد المسارات وDNS وملف hosts والمنطقة الزمنية وإعداد الوكيل في Windows.
+### 🛡️ الخصوصية والحماية
+- **نفق TUN شامل** لكل التطبيقات (Wintun في Windows و`/dev/net/tun` في Linux).
+- **مفتاح إيقاف:** إذا انقطع النفق أو الوكيل يبقى الإنترنت محجوبًا بدل الرجوع إلى الاتصال الحقيقي.
+- **حماية من تسرب IPv6 وDNS** حتى عند إيقاف مفتاح الإيقاف.
+- **DNS عن بُعد (FakeIP):** لا تغادر طلبات DNS حاسوبك، ويحلّ الخادم الأسماء في بلد الخروج.
+- **اختبار تسرب مدمج** (IP وWebRTC) وعرض IP الخروج مع البلد والمزوّد.
+- **مطابقة المنطقة الزمنية** مع بلد الخادم (اختياري).
+- **أمان عند الإغلاق المفاجئ:** عملية مراقبة تعيد الشبكة والمنطقة الزمنية وإعداد الوكيل.
 
-**الخوادم**
-- نواة [sing-box](https://github.com/SagerNet/sing-box) مدمجة: VLESS (Reality، وXHTTP عبر Xray)، VMess، Trojan، Shadowsocks، Hysteria / Hysteria2، TUIC، WireGuard، NaiveProxy، SOCKS، HTTP، OpenVPN (.ovpn) وAnyConnect / OpenConnect / Fortinet / GlobalProtect.
-- اشتراكات (روابط base64 وصيغ sing-box وClash) مع تحديث تلقائي.
-- Ping وزمن الاستجابة الحقيقي واختبار السرعة لخادم واحد أو للجميع.
-- «تلقائي (الأسرع)» مع تبديل تلقائي للخادم دون قطع الاتصالات المفتوحة.
-- أو استخدم v2rayN: يعثر v2tun عليه وعلى نواته تلقائيًا.
+### ⚡ الخوادم والبروتوكولات
+- **نواة [sing-box](https://github.com/SagerNet/sing-box) مدمجة:** VLESS (Reality، وXHTTP عبر Xray)، VMess، Trojan، Shadowsocks، Hysteria / Hysteria2، TUIC، WireGuard، NaiveProxy، SOCKS، HTTP، OpenVPN وAnyConnect / OpenConnect / Fortinet / GlobalProtect.
+- **اشتراكات** بصيغ base64 وsing-box وClash مع تحديث تلقائي.
+- **Ping وزمن الاستجابة الحقيقي واختبار السرعة** لخادم واحد أو للجميع.
+- **تلقائي (الأسرع)** مع تبديل الخادم دون قطع الاتصالات المفتوحة.
+- **وضع v2rayN:** استخدم خوادم v2rayN التي لديك.
 
-**المزيد**
-- وكيل محلي: SOCKS5 وHTTP على منفذ واحد قابل للضبط، مع إمكانية الوصول من الشبكة المحلية، ووضع «وكيل فقط» يضبط وكيل Windows بدل إنشاء نفق.
-- نقطة اتصال Wi-Fi: الهواتف والحواسيب المتصلة بها تستخدم النفق أيضًا، مع مفتاح الإيقاف نفسه (ينقطع عنها الإنترنت إذا انقطع النفق). تعمل دون إعدادات «نقطة الاتصال المحمولة» في Windows (عبر Wi-Fi Direct)، وفي Linux عبر NetworkManager.
-- تقسيم النفق حسب التطبيق (exe) وحسب النطاق / نطاق IP، بوضعَي «الكل ما عدا هذه» و«هذه فقط».
-- أيقونة بجانب الساعة، تشغيل مع Windows (بدون نافذة UAC)، اتصال تلقائي.
-- واجهة بالإنجليزية والفارسية والعربية والصينية.
+### 📶 المشاركة
+- **نقطة اتصال Wi-Fi:** الهواتف والأجهزة اللوحية والحواسيب المتصلة بها تستخدم النفق بالحماية نفسها؛ إذا انقطع النفق ينقطع عنها الإنترنت ولا يتسرب شيء.
+- **وكيل محلي:** SOCKS5 وHTTP على منفذ واحد، مع إمكانية الوصول من الشبكة المحلية.
+- **وضع «وكيل فقط»:** دون نفق، الوكيل المحلي فقط كوكيل للنظام.
+
+### 🧭 التحكم
+- **تقسيم النفق** حسب التطبيق وحسب النطاق / نطاق IP، بوضعَي «الكل ما عدا هذه» و«هذه فقط».
+- **تعامل ذكي مع QUIC:** عندما لا ينقل الخادم UDP تتحول التطبيقات إلى TCP فورًا دون انتظار.
+
+### 🖥️ الواجهة
+- أيقونة بجانب الساعة، تشغيل عند تسجيل الدخول (دون كلمة مرور أو UAC)، اتصال تلقائي.
+- واجهة **بالإنجليزية والفارسية والعربية والصينية**.
+- Windows 10/11 وLinux (Ubuntu وDebian وMint وFedora وAppImage).
+
+## التنزيل
+
+نزّل أحدث إصدار من **[Releases](https://github.com/smma91/v2tun/releases/latest)**. طريقة التثبيت لكل نظام موضحة أدناه.
 
 ## متطلبات Windows
 
@@ -106,6 +141,16 @@ sudo setcap cap_net_admin,cap_net_raw+ep ./v2tun
 ## الملاحظات والمشاكل
 
 وجدت خطأً أو لديك فكرة؟ [افتح Issue](https://github.com/smma91/v2tun/issues/new/choose). احذف عناوين الخوادم وكلمات المرور وروابط الاشتراك من السجلات قبل نشرها. لا تُقبل طلبات الدمج (Pull Requests) حاليًا.
+
+## ☕ ادعم المشروع
+
+v2tun مجاني ومفتوح المصدر. إن أفادك يمكنك دعوتي إلى فنجان قهوة:
+
+| الشبكة | العنوان |
+|---|---|
+| Ethereum وBNB Smart Chain وPolygon وArbitrum وشبكات EVM الأخرى (USDT وUSDC وETH وBNB…) | <code dir="ltr">0x1404A760e5A30f9DD1D3AC68726673f94DC2f649</code> |
+
+يُرجى التحقق من العنوان والشبكة قبل الإرسال. النجوم ⭐ وتقارير الأخطاء تساعد كثيرًا أيضًا.
 
 ## الترخيص
 

@@ -1,11 +1,20 @@
-# v2tun
+<h1 align="center">v2tun</h1>
 
-**English** | [فارسی](docs/README.fa.md) | [العربية](docs/README.ar.md) | [中文](docs/README.zh.md)
+<p align="center">
+  <b>One click, and every app on your computer goes through your proxy, with a real kill switch.</b><br>
+  System-wide tunnel for <b>Windows</b> and <b>Linux</b>, with a built-in core or your existing v2rayN.
+</p>
 
-A system-wide tunnel with a kill switch for **Windows and Linux**. v2tun sends
-the traffic of every app on the computer through a proxy, using either its
-own built-in core (servers and subscriptions inside the app) or the SOCKS port
-of a running [v2rayN](https://github.com/2dust/v2rayN).
+<p align="center">
+  <a href="https://github.com/smma91/v2tun/releases/latest"><img src="https://img.shields.io/github/v/release/smma91/v2tun?label=download&color=2563eb" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-0f172a" alt="Windows | Linux">
+  <a href="https://github.com/smma91/v2tun/releases"><img src="https://img.shields.io/github/downloads/smma91/v2tun/total?color=16a34a" alt="Downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/smma91/v2tun?color=64748b" alt="License"></a>
+</p>
+
+<p align="center">
+  <b>English</b> | <a href="docs/README.fa.md">فارسی</a> | <a href="docs/README.ar.md">العربية</a> | <a href="docs/README.zh.md">中文</a>
+</p>
 
 <p align="center">
   <img src="docs/screenshots/connect.png" width="260" alt="Connect">
@@ -13,43 +22,53 @@ of a running [v2rayN](https://github.com/2dust/v2rayN).
   <img src="docs/screenshots/settings.png" width="260" alt="Settings">
 </p>
 
+## Why v2tun?
+
+| | |
+|---|---|
+| 🌐 **Every app, not just the browser** | Games, messengers, updaters, the terminal: all of them use the tunnel, with no per-app proxy settings. |
+| 🛡️ **Nothing leaks** | Kill switch, IPv6 and DNS leak guard, and remote DNS: the leak tests show only your server. |
+| 📶 **Share it over Wi-Fi** | Turn your PC into a hotspot. Phones and laptops that join it are tunneled too. |
+| ⚡ **All modern protocols** | VLESS Reality / XHTTP, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard, NaiveProxy, OpenVPN, AnyConnect and more. |
+| 🚀 **Always the fastest server** | Ping, real delay and speed test, plus "Auto" mode that switches servers without dropping your downloads. |
+| 🔌 **Works with v2rayN** | Already use v2rayN? v2tun finds it and tunnels its proxy for the whole system. |
+| 🧩 **Simple and free** | One small program, a clean dark interface in 4 languages, open source (GPL-3.0). |
+
 ## Features
 
-**Tunnel and protection**
-- System-wide TUN tunnel for all apps, not just browsers (Wintun on Windows,
-  `/dev/net/tun` on Linux).
-- Kill switch (Windows Filtering Platform / nftables): if the tunnel or proxy
-  drops, the internet stays blocked instead of falling back to the real
-  connection.
-- IPv6 and DNS leak guard, also when the kill switch is off.
-- Remote DNS (FakeIP): DNS queries never leave the computer; the server
-  resolves names in the exit country, so DNS leak tests come out clean.
-- Built-in IP / WebRTC leak test and exit IP display.
-- Optional: match the system time zone to the server's country.
-- Crash safety: a watchdog process restores the network, the time zone and
-  the system proxy setting if v2tun is killed.
+### 🛡️ Privacy and protection
+- **System-wide TUN tunnel** for all apps (Wintun on Windows, `/dev/net/tun` on Linux).
+- **Kill switch** (Windows Filtering Platform / nftables): if the tunnel or the proxy drops, the internet stays blocked instead of falling back to your real connection.
+- **IPv6 and DNS leak guard**, also when the kill switch is off.
+- **Remote DNS (FakeIP):** DNS queries never leave your computer. The server resolves names in the exit country, so DNS leak tests come out clean.
+- **Built-in leak test** (IP and WebRTC) and exit IP display with country and provider.
+- **Time zone matching** (optional): the system time zone follows the server's country.
+- **Crash safe:** a watchdog restores the network, the time zone and the proxy settings even if v2tun is killed.
 
-**Servers**
-- Built-in [sing-box](https://github.com/SagerNet/sing-box) core: VLESS
-  (Reality, XHTTP via Xray), VMess, Trojan, Shadowsocks, Hysteria / Hysteria2,
-  TUIC, WireGuard, NaiveProxy, SOCKS, HTTP, OpenVPN (.ovpn) and
-  AnyConnect / OpenConnect / Fortinet / GlobalProtect.
-- Subscriptions (base64 links, sing-box and Clash formats) with auto-update.
-- Ping, real delay and speed test, per server or for all.
-- "Auto (fastest)" with failover that does not interrupt open connections.
-- Or use v2rayN instead: v2tun finds it and its cores automatically.
+### ⚡ Servers and protocols
+- **Built-in [sing-box](https://github.com/SagerNet/sing-box) core:** VLESS (Reality, XHTTP via Xray), VMess, Trojan, Shadowsocks, Hysteria / Hysteria2, TUIC, WireGuard, NaiveProxy, SOCKS, HTTP, OpenVPN (`.ovpn`), AnyConnect / OpenConnect / Fortinet / GlobalProtect.
+- **Subscriptions:** base64 links, sing-box and Clash formats, with auto-update.
+- **Ping, real delay and speed test**, for one server or all of them.
+- **Auto (fastest)** with failover that keeps open connections alive.
+- **v2rayN mode:** use the servers you already have in v2rayN.
 
-**More**
-- Local proxy: SOCKS5 + HTTP on one configurable port, optionally reachable
-  from the local network, and a "Proxy only" mode that sets the system proxy
-  instead of creating a tunnel.
-- Wi-Fi hotspot: phones and laptops that join it use the tunnel too, with the
-  same kill switch (no internet for them if the tunnel drops). Works without
-  Windows' Mobile Hotspot settings (Wi-Fi Direct); on Linux via NetworkManager.
-- Split tunneling by app and by domain / IP range, in "exclude" or "include"
-  mode.
-- Tray icon, start at login (no password / UAC prompt), auto-connect.
-- English, Persian, Arabic and Chinese user interface.
+### 📶 Sharing
+- **Wi-Fi hotspot:** phones, tablets and laptops that join it use the tunnel, with the same protection. If the tunnel drops, they have no internet instead of a leak. It uses Windows Mobile Hotspot (or Wi-Fi Direct) on Windows and NetworkManager on Linux.
+- **Local proxy:** SOCKS5 and HTTP on one port, optionally reachable from your network.
+- **"Proxy only" mode:** no tunnel, just the local proxy, set as the system proxy.
+
+### 🧭 Control
+- **Split tunneling** by app and by domain / IP range, in "exclude" or "include" mode.
+- **Smart QUIC handling:** when your server cannot carry UDP, apps switch to TCP at once instead of hanging.
+
+### 🖥️ Desktop
+- Tray icon, start at login (no password or UAC prompt), auto-connect.
+- Interface in **English, Persian, Arabic and Chinese**.
+- Windows 10/11 and Linux (Ubuntu, Debian, Mint, Fedora, AppImage).
+
+## Download
+
+Get the latest version from **[Releases](https://github.com/smma91/v2tun/releases/latest)**. Installation for each system is described below.
 
 ## Windows
 
@@ -186,6 +205,16 @@ files and checksums.
 Found a bug or have an idea? Please [open an issue](../../issues/new/choose).
 Remove server addresses, passwords and subscription links from logs before
 posting them. Pull requests are not accepted at the moment.
+
+## ☕ Support the project
+
+v2tun is free and open source. If it helps you, you can buy me a coffee:
+
+| Network | Address |
+|---|---|
+| Ethereum, BNB Smart Chain, Polygon, Arbitrum and other EVM chains (USDT, USDC, ETH, BNB, …) | `0x1404A760e5A30f9DD1D3AC68726673f94DC2f649` |
+
+Please double-check the address and the network before you send. Stars ⭐ and bug reports help a lot too.
 
 ## License
 
