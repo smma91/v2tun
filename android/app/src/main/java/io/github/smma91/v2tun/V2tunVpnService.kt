@@ -18,7 +18,15 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.github.smma91.v2tun.libbox.BridgeOptions
 import io.github.smma91.v2tun.libbox.BridgeSession
+import io.github.smma91.v2tun.libbox.CommandClient
+import io.github.smma91.v2tun.libbox.CommandClientHandler
+import io.github.smma91.v2tun.libbox.CommandClientOptions
+import io.github.smma91.v2tun.libbox.ConnectionEvents
 import io.github.smma91.v2tun.libbox.CommandServer
+import io.github.smma91.v2tun.libbox.LogIterator
+import io.github.smma91.v2tun.libbox.OutboundGroupItemIterator
+import io.github.smma91.v2tun.libbox.OutboundGroupIterator
+import io.github.smma91.v2tun.libbox.StatusMessage
 import io.github.smma91.v2tun.libbox.CommandServerHandler
 import io.github.smma91.v2tun.libbox.ConnectionOwner
 import io.github.smma91.v2tun.libbox.InterfaceUpdateListener
@@ -54,12 +62,22 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         private const val CHANNEL = "vpn"
         private const val NOTIFICATION_ID = 1
         private const val TAG = "v2tun"
+
+        /** The running service (its protect() keeps sockets out of the tunnel). */
+        @Volatile var instance: V2tunVpnService? = null
+            private set
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
     }
 
     private var server: CommandServer? = null
     private var tunFd: ParcelFileDescriptor? = null
     private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var statusClient: CommandClient? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -82,6 +100,8 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 s.startOrReloadService(config, OverrideOptions())
                 Vpn.set(Status.STARTED)
                 showNotification()
+                watchTraffic()
+                lookUpExit()
             } catch (e: Throwable) {
                 Log.e(TAG, "start", e)
                 cleanup()
@@ -103,6 +123,8 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     }
 
     private fun cleanup() {
+        runCatching { statusClient?.disconnect() }
+        statusClient = null
         runCatching { server?.closeService() }
         runCatching { server?.close() }
         server = null
@@ -115,9 +137,52 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     override fun onRevoke() = stopTunnel() // another VPN app took over
 
     override fun onDestroy() {
+        instance = null
         cleanup()
         if (Vpn.status.value != Status.STOPPED) Vpn.set(Status.STOPPED)
         super.onDestroy()
+    }
+
+    // ---- live traffic and exit IP (shown on the main screen) ----
+
+    private fun watchTraffic() {
+        val o = CommandClientOptions()
+        o.addCommand(Libbox.CommandStatus)
+        o.statusInterval = 1_000_000_000L // 1 s
+        val c = Libbox.newCommandClient(object : CommandClientHandler {
+            override fun writeStatus(message: StatusMessage) {
+                if (Vpn.status.value != Status.STARTED) return
+                Vpn.traffic.value = Traffic(message.uplink, message.downlink, message.uplinkTotal, message.downlinkTotal)
+            }
+            override fun connected() {}
+            override fun disconnected(message: String?) {}
+            override fun clearLogs() {}
+            override fun initializeClashMode(modeList: StringIterator?, currentMode: String?) {}
+            override fun setDefaultLogLevel(level: Int) {}
+            override fun updateClashMode(newMode: String?) {}
+            override fun writeConnectionEvents(events: ConnectionEvents?) {}
+            override fun writeGroups(message: OutboundGroupIterator?) {}
+            override fun writeLogs(messageList: LogIterator?) {}
+            override fun writeOutbounds(message: OutboundGroupItemIterator?) {}
+        }, o)
+        statusClient = c
+        thread(name = "v2tun-status") { runCatching { c.connect() }.onFailure { Log.w(TAG, "status", it) } }
+    }
+
+    private fun lookUpExit() {
+        thread(name = "v2tun-exit") {
+            repeat(3) { attempt ->
+                if (Vpn.status.value != Status.STARTED) return@thread
+                val r = runCatching { org.json.JSONObject(Mobile.exitInfo()) }.getOrNull()
+                if (r != null) {
+                    if (Vpn.status.value == Status.STARTED) {
+                        Vpn.exit.value = Exit(r.optString("ip"), r.optString("country"), r.optString("city"), r.optString("org"))
+                    }
+                    return@thread
+                }
+                Thread.sleep(2000L * (attempt + 1))
+            }
+        }
     }
 
     // ---- notification (required for a foreground service) ----
@@ -182,6 +247,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             val include = options.includePackage
             if (include.hasNext()) {
                 while (include.hasNext()) runCatching { b.addAllowedApplication(include.next()) }
+                runCatching { b.addAllowedApplication(packageName) } // v2tun's own checks (exit IP) go through the tunnel
             } else {
                 val exclude = options.excludePackage
                 while (exclude.hasNext()) runCatching { b.addDisallowedApplication(exclude.next()) }

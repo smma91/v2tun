@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 data class ServerItem(
     val id: String, val sub: String, val name: String, val type: String, val addr: String,
-    val delay: Int, val error: String,
+    val delay: Int, val ping: Int, val error: String,
 )
 
 data class SubItem(val id: String, val name: String, val count: Int, val updated: Long, val error: String)
@@ -20,7 +20,7 @@ object Store {
         val servers = o.optJSONArray("servers").objects().map {
             ServerItem(
                 it.optString("id"), it.optString("sub"), it.optString("name"), it.optString("type"),
-                it.optString("addr"), it.optInt("delay"), it.optString("error"),
+                it.optString("addr"), it.optInt("delay"), it.optInt("ping"), it.optString("error"),
             )
         }
         val subs = o.optJSONArray("subs").objects().map {

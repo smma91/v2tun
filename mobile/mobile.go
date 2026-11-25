@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"v2tun/internal/i18n"
+	"v2tun/internal/netcheck"
 	"v2tun/internal/profile"
 )
 
@@ -120,4 +121,15 @@ func SetDelays(results string) {
 	if json.Unmarshal([]byte(results), &d) == nil {
 		db.SetDelays(d)
 	}
+}
+
+// ExitInfo asks which public IP and country the internet sees (JSON). With
+// the VPN on, the app's own traffic goes through the tunnel: this is the exit.
+func ExitInfo() (string, error) {
+	info, err := netcheck.Exit(&http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{DisableKeepAlives: true}})
+	if err != nil {
+		return "", err
+	}
+	b, _ := json.Marshal(info)
+	return string(b), nil
 }

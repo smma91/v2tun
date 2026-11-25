@@ -3,52 +3,18 @@ package main
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
 	"sync/atomic"
 	"time"
+
+	"v2tun/internal/netcheck"
 )
 
-type ExitInfo struct {
-	IP       string `json:"ip"`
-	City     string `json:"city"`
-	Country  string `json:"country"`
-	Org      string `json:"org"`
-	Timezone string `json:"timezone"`
-}
-
-// IP lookup services, tried in order: any of them may be blocked or rate
-// limited. Each returns JSON; field names are mapped to ExitInfo.
-var ipServices = []struct {
-	url   string
-	parse func(map[string]any) ExitInfo
-}{
-	{"https://ipinfo.io/json", func(m map[string]any) ExitInfo {
-		return ExitInfo{IP: str(m["ip"]), City: str(m["city"]), Country: str(m["country"]), Org: str(m["org"]), Timezone: str(m["timezone"])}
-	}},
-	{"https://ipwho.is/", func(m map[string]any) ExitInfo {
-		c, tz := sub(m["connection"]), sub(m["timezone"])
-		org := str(c["org"])
-		if asn := str(c["asn"]); asn != "" {
-			org = "AS" + asn + " " + org
-		}
-		return ExitInfo{IP: str(m["ip"]), City: str(m["city"]), Country: str(m["country_code"]), Org: org, Timezone: str(tz["id"])}
-	}},
-	{"https://api.ip.sb/geoip", func(m map[string]any) ExitInfo {
-		org := str(m["organization"])
-		if asn := str(m["asn"]); asn != "" {
-			org = "AS" + asn + " " + org
-		}
-		return ExitInfo{IP: str(m["ip"]), City: str(m["city"]), Country: str(m["country_code"]), Org: org, Timezone: str(m["timezone"])}
-	}},
-	{"https://api.ipify.org?format=json", func(m map[string]any) ExitInfo { return ExitInfo{IP: str(m["ip"])} }},
-}
+type ExitInfo = netcheck.ExitInfo
 
 // exitInfo asks which public IP the internet sees. A new connection is used
 // every time: a kept-alive one could still belong to the network path from
@@ -64,34 +30,7 @@ func exitInfo() (ExitInfo, error) {
 			tr.Proxy = http.ProxyURL(u)
 		}
 	}
-	c := http.Client{Timeout: 8 * time.Second, Transport: tr}
-	var lastErr error
-	for _, s := range ipServices {
-		req, _ := http.NewRequest("GET", s.url, nil)
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", "v2tun")
-		resp, err := c.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		var m map[string]any
-		err = json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(&m)
-		resp.Body.Close()
-		if err != nil {
-			// An HTML page instead of JSON: typically the ISP's filtering page.
-			lastErr = fmt.Errorf("%s: HTTP %d, %s", s.url, resp.StatusCode, "not JSON (blocked or filtered)")
-			continue
-		}
-		if info := s.parse(m); net.ParseIP(info.IP) != nil {
-			return info, nil
-		}
-		lastErr = fmt.Errorf("%s: no IP in answer", s.url)
-	}
-	if lastErr == nil {
-		lastErr = errors.New("no IP service answered")
-	}
-	return ExitInfo{}, lastErr
+	return netcheck.Exit(&http.Client{Timeout: 8 * time.Second, Transport: tr})
 }
 
 type LeakResult struct {

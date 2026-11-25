@@ -9,6 +9,12 @@ import kotlinx.coroutines.flow.StateFlow
 
 enum class Status { STOPPED, STARTING, STARTED, STOPPING }
 
+/** Bytes per second and in total, while connected. */
+data class Traffic(val up: Long, val down: Long, val upTotal: Long, val downTotal: Long)
+
+/** What the internet sees: the server's public IP and its country. */
+data class Exit(val ip: String, val country: String, val city: String, val org: String)
+
 /** The VPN's state, shared by the service, the screen, the tile and the notification. */
 object Vpn {
     private val _status = MutableStateFlow(Status.STOPPED)
@@ -17,11 +23,18 @@ object Vpn {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    internal val traffic = MutableStateFlow<Traffic?>(null)
+    internal val exit = MutableStateFlow<Exit?>(null)
+
     var since = 0L
         private set
 
     internal fun set(s: Status, error: String? = null) {
         if (s == Status.STARTED) since = System.currentTimeMillis()
+        if (s != Status.STARTED) {
+            traffic.value = null
+            exit.value = null
+        }
         _status.value = s
         if (error != null || s == Status.STARTING) _error.value = error
     }
