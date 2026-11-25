@@ -34,6 +34,8 @@ type handler struct {
 
 	dnsTCP *dnsTCP
 	fake   *fakeIP // nil: real DNS through the tunnel instead of remote DNS
+	// reject answers a blocked UDP packet with ICMP "port unreachable"
+	reject func(src netip.Addr, srcPort uint16, dst netip.Addr, dstPort uint16)
 
 	hotspot     atomic.Pointer[netip.Prefix] // address range of hotspot devices
 	hotspotSeen sync.Map                     // device address -> logged
@@ -288,9 +290,14 @@ func (h *handler) udp(origin adapter.UDPConn) {
 		}
 		direct = r.domainDirect(domain, m.DstIP)
 	}
-	// QUIC (HTTP/3) through a proxy that does not relay UDP just hangs;
-	// dropping it makes browsers switch to TCP immediately (YouTube, Google).
+	// QUIC (HTTP/3) through a proxy that does not relay UDP just hangs.
+	// Refusing it like a host without that port (ICMP "port unreachable")
+	// makes apps switch to TCP at once instead of retrying and waiting
+	// (YouTube, Google, Apple services; also saves phones' battery).
 	if !direct && h.blockQUIC.Load() && (m.DstPort == 443 || m.DstPort == 80) {
+		if h.reject != nil {
+			h.reject(m.SrcIP, m.SrcPort, m.DstIP, m.DstPort)
+		}
 		return
 	}
 	if host != "" { // UDP needs a real address: resolve it (through the server unless direct)

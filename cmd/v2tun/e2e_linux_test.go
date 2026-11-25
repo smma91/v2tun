@@ -3,6 +3,7 @@
 package main
 
 import (
+	"net"
 	"net/netip"
 	"os"
 	"os/exec"
@@ -167,6 +168,17 @@ func testTunnel(t *testing.T, ks bool) {
 	} else {
 		t.Logf("https://www.youtube.com/ -> %s", out)
 	}
+	// 5b. QUIC (UDP 443) is refused at once, not left hanging.
+	if c, err := net.Dial("udp4", "1.1.1.1:443"); err == nil {
+		c.Write([]byte("quic"))
+		c.SetReadDeadline(time.Now().Add(2 * time.Second))
+		_, err := c.Read(make([]byte, 64))
+		c.Close()
+		t.Logf("QUIC attempt: %v", err)
+		if err == nil || !strings.Contains(err.Error(), "refused") {
+			t.Errorf("QUIC not refused at once: %v", err)
+		}
+	}
 	// 6. IPv6 to the internet is refused (no leak).
 	if out, err := sh("curl", "-6", "-s", "-m", "5", "https://api64.ipify.org"); err == nil && out != "" {
 		t.Errorf("IPv6 leak: %q", out)
@@ -239,6 +251,60 @@ func TestE2EKilledWhileConnected(t *testing.T) {
 		t.Error("state not cleared by watchdog")
 	}
 	checkClean(t, realIP)
+}
+
+// QUIC is refused at once by the tunnel (no proxy server needed: the refusal
+// happens before anything is sent to it). A dummy listener stands in for v2rayN.
+func TestE2EQUICRefused(t *testing.T) {
+	e2e(t)
+	l, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	go func() {
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				return
+			}
+			c.Read(make([]byte, 3)) // SOCKS5 greeting: no authentication
+			c.Write([]byte{5, 0})
+			c.Close()
+		}
+	}()
+	e := &Engine{logf: func(l, f string, a ...any) { t.Logf("[%s] "+f, append([]any{l}, a...)...) }}
+	s := defaultSettings()
+	s.ProxySource, s.SocksAddr, s.KillSwitch, s.MatchTimezone = "v2rayn", l.Addr().String(), false, false
+	if err := e.Start(s); err != nil {
+		t.Fatal(err)
+	}
+	defer e.Stop()
+	time.Sleep(time.Second)
+	for _, dst := range []string{"1.1.1.1:443", "8.8.8.8:80"} {
+		c, err := net.Dial("udp4", dst)
+		if err != nil {
+			t.Fatal(err)
+		}
+		start := time.Now()
+		c.Write([]byte("quic"))
+		c.SetReadDeadline(time.Now().Add(3 * time.Second))
+		_, err = c.Read(make([]byte, 64))
+		c.Close()
+		t.Logf("%s: %v after %v", dst, err, time.Since(start).Round(time.Millisecond))
+		if err == nil || !strings.Contains(err.Error(), "refused") {
+			t.Errorf("%s: not refused at once: %v", dst, err)
+		}
+	}
+	// Other UDP is not refused (it is forwarded; here the dummy proxy fails it).
+	c, _ := net.Dial("udp4", "1.1.1.1:5353")
+	c.Write([]byte("x"))
+	c.SetReadDeadline(time.Now().Add(1500 * time.Millisecond))
+	_, err = c.Read(make([]byte, 64))
+	c.Close()
+	if err != nil && strings.Contains(err.Error(), "refused") {
+		t.Error("other UDP was refused too")
+	}
 }
 
 func TestProcIP(t *testing.T) {

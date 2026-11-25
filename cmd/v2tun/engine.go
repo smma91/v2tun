@@ -166,6 +166,7 @@ func (e *Engine) Start(s Settings) (err error) {
 		return fmt.Errorf("network stack: %w", err)
 	}
 	cleanup = append(cleanup, func() { stk.Close(); stk.Wait() })
+	e.handler.reject = rejecter(stk)
 
 	// Firewall: the full kill switch, or at least the IPv6 / DNS leak guard
 	// (both optional).
