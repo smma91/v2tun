@@ -34,7 +34,7 @@ func TestParseLinks(t *testing.T) {
 	}
 	for _, l := range links {
 		s := newServer(l, "")
-		b, _ := json.Marshal(func() any { ob, _ := s.outbound(); return ob }())
+		b, _ := json.Marshal(func() any { ob, _ := s.Outbound(); return ob }())
 		t.Logf("%-10s %-14s %-22s err=%q %s", s.Type, s.Name, s.Addr, s.Error, b)
 	}
 	if got := len(splitLinks(base64.StdEncoding.EncodeToString([]byte(links[0] + "\n" + links[5])))); got != 2 {

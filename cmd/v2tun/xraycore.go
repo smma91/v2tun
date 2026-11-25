@@ -32,18 +32,6 @@ type xrayInst struct {
 
 var xrays = &xrayPool{insts: map[string]*xrayInst{}}
 
-func needsXray(link string) bool {
-	if !strings.HasPrefix(strings.ToLower(link), "vless://") {
-		return false
-	}
-	u, err := url.Parse(link)
-	if err != nil {
-		return false
-	}
-	t := strings.ToLower(u.Query().Get("type"))
-	return t == "xhttp" || t == "splithttp"
-}
-
 // xrayOutbound converts a VLESS XHTTP link to an Xray outbound. The server
 // name is resolved here, on the real network: inside the tunnel names resolve
 // to FakeIP addresses, which only mean something to the tunnel itself.

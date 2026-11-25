@@ -102,7 +102,7 @@ func (a *App) startup(ctx context.Context) {
 	go a.serverMaintenance()
 	go func() {
 		defer recoverPanic("app")
-		for _, u := range a.db.migrateSubs() {
+		for _, u := range a.db.MigrateSubs() {
 			a.logf("info", "A subscription link that was stored as a server has been fixed")
 			a.AddSubscription("", u)
 		}

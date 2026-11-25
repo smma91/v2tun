@@ -94,7 +94,7 @@ func coreConfig(port int, uplink uplink, servers []*Server, selected string) ([]
 			viaXray[s.ID] = true
 		} else {
 			var err error
-			if ob, err = s.outbound(); err != nil {
+			if ob, err = s.Outbound(); err != nil {
 				continue
 			}
 		}

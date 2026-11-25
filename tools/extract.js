@@ -25,8 +25,11 @@ for (const m of js.matchAll(/\bt\(\s*(["`])((?:\\.|(?!\1).)*)\1/g)) out.add(m[1]
 const linux = js.match(/const LINUX_TEXT = \{([\s\S]*?)\n\};/);
 if (linux) for (const m of linux[1].matchAll(/"((?:\\.|[^"\\])*)"/g)) out.add(JSON.parse('"' + m[1] + '"'));
 
-for (const f of fs.readdirSync(root).filter((f) => f.endsWith(".go") && !f.endsWith("_test.go"))) {
-  const src = fs.readFileSync(path.join(root, f), "utf8");
+// Go: the desktop program and the shared packages in internal/.
+const goFiles = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+  e.isDirectory() ? goFiles(path.join(d, e.name)) : e.name.endsWith(".go") && !e.name.endsWith("_test.go") ? [path.join(d, e.name)] : []);
+for (const f of [...goFiles(root), ...goFiles(path.join(__dirname, "..", "internal"))]) {
+  const src = fs.readFileSync(f, "utf8");
   for (const m of src.matchAll(/\b(?:T|trErr|logf\([^,()]+,)\s*\(?\s*"((?:\\.|[^"\\])*)"/g)) out.add(JSON.parse('"' + m[1] + '"'));
   for (const m of src.matchAll(/\bpick\(\s*"((?:\\.|[^"\\])*)",\s*"((?:\\.|[^"\\])*)"/g)) { out.add(JSON.parse('"' + m[1] + '"')); out.add(JSON.parse('"' + m[2] + '"')); }
 }

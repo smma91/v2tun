@@ -180,6 +180,7 @@ strings that have no translation yet; add them to `tools/tr-extra.json`
 cmd/v2tun/            the application (Go, package main)
   ├─ frontend/        UI (plain HTML / CSS / JS) and translations (i18n.json)
   └─ assets/          embedded files: wintun.dll, libcronet.dll, tray icons
+internal/             code shared with the mobile apps: i18n, profile (links, subscriptions, server list)
 build/windows/        app icon and manifest for the Windows resource
 build/linux/          Linux packaging: .deb/.rpm (nfpm), AppImage, tar.gz installer
 docs/                 test checklist, release guide, translations of this README, screenshots

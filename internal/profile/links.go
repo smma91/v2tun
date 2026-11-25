@@ -1,4 +1,4 @@
-package main
+package profile
 
 import (
 	"encoding/base64"
@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-// parseLink converts a share link (vless://, vmess://, trojan://, ss://,
+// ParseLink converts a share link (vless://, vmess://, trojan://, ss://,
 // hysteria2://, hy2://, hysteria://, tuic://, wireguard://, wg://, ssh://,
 // socks://, http(s)://, anytls://) or a sing-box outbound JSON object into a
 // sing-box outbound. It also returns a display name.
-func parseLink(link string) (map[string]any, string, error) {
+func ParseLink(link string) (map[string]any, string, error) {
 	link = strings.TrimSpace(link)
 	if strings.HasPrefix(link, "{") {
 		var ob map[string]any
@@ -71,8 +71,8 @@ func parseLink(link string) (map[string]any, string, error) {
 		if err := v2Transport(ob, q.Get("type"), q.Get("headerType"), q.Get("path"), q.Get("host"), q.Get("serviceName"), q.Get("mode")); err != nil {
 			return nil, name, err
 		}
-		v2TLS(ob, q.Get("security"), firstNonEmpty(q.Get("sni"), q.Get("peer")), q.Get("fp"), q.Get("alpn"),
-			truthy(q.Get("allowInsecure"), q.Get("insecure")), q.Get("pbk"), q.Get("sid"), host)
+		v2TLS(ob, q.Get("security"), FirstNonEmpty(q.Get("sni"), q.Get("peer")), q.Get("fp"), q.Get("alpn"),
+			Truthy(q.Get("allowInsecure"), q.Get("insecure")), q.Get("pbk"), q.Get("sid"), host)
 		return ob, name, nil
 
 	case "trojan":
@@ -85,17 +85,17 @@ func parseLink(link string) (map[string]any, string, error) {
 		if sec == "" {
 			sec = "tls"
 		}
-		v2TLS(ob, sec, firstNonEmpty(q.Get("sni"), q.Get("peer")), q.Get("fp"), q.Get("alpn"),
-			truthy(q.Get("allowInsecure"), q.Get("insecure")), q.Get("pbk"), q.Get("sid"), host)
+		v2TLS(ob, sec, FirstNonEmpty(q.Get("sni"), q.Get("peer")), q.Get("fp"), q.Get("alpn"),
+			Truthy(q.Get("allowInsecure"), q.Get("insecure")), q.Get("pbk"), q.Get("sid"), host)
 		return ob, name, nil
 
 	case "hysteria2", "hy2":
 		ob := base("hysteria2", 443)
-		ob["password"] = firstNonEmpty(pass, user, q.Get("auth"))
+		ob["password"] = FirstNonEmpty(pass, user, q.Get("auth"))
 		if pass != "" && user != "" {
 			ob["password"] = user + ":" + pass
 		}
-		if ports := firstNonEmpty(q.Get("mport"), q.Get("ports")); ports != "" {
+		if ports := FirstNonEmpty(q.Get("mport"), q.Get("ports")); ports != "" {
 			var list []string
 			for _, p := range strings.Split(ports, ",") {
 				list = append(list, strings.ReplaceAll(strings.TrimSpace(p), "-", ":"))
@@ -105,46 +105,46 @@ func parseLink(link string) (map[string]any, string, error) {
 		if o := q.Get("obfs"); o != "" && o != "none" {
 			ob["obfs"] = map[string]any{"type": o, "password": q.Get("obfs-password")}
 		}
-		ob["tls"] = quicTLS(firstNonEmpty(q.Get("sni"), q.Get("peer"), host), truthy(q.Get("insecure"), q.Get("allowInsecure")), q.Get("alpn"), "h3")
+		ob["tls"] = quicTLS(FirstNonEmpty(q.Get("sni"), q.Get("peer"), host), Truthy(q.Get("insecure"), q.Get("allowInsecure")), q.Get("alpn"), "h3")
 		return ob, name, nil
 
 	case "hysteria":
 		ob := base("hysteria", 443)
-		if v := firstNonEmpty(q.Get("auth"), q.Get("auth_str")); v != "" {
+		if v := FirstNonEmpty(q.Get("auth"), q.Get("auth_str")); v != "" {
 			ob["auth_str"] = v
 		}
-		ob["up_mbps"] = atoiDef(firstNonEmpty(q.Get("upmbps"), q.Get("up")), 20)
-		ob["down_mbps"] = atoiDef(firstNonEmpty(q.Get("downmbps"), q.Get("down")), 100)
-		if o := firstNonEmpty(q.Get("obfsParam"), q.Get("obfs")); o != "" && o != "xplus" {
+		ob["up_mbps"] = AtoiDef(FirstNonEmpty(q.Get("upmbps"), q.Get("up")), 20)
+		ob["down_mbps"] = AtoiDef(FirstNonEmpty(q.Get("downmbps"), q.Get("down")), 100)
+		if o := FirstNonEmpty(q.Get("obfsParam"), q.Get("obfs")); o != "" && o != "xplus" {
 			ob["obfs"] = o
 		}
-		ob["tls"] = quicTLS(firstNonEmpty(q.Get("peer"), q.Get("sni"), host), truthy(q.Get("insecure")), q.Get("alpn"), "hysteria")
+		ob["tls"] = quicTLS(FirstNonEmpty(q.Get("peer"), q.Get("sni"), host), Truthy(q.Get("insecure")), q.Get("alpn"), "hysteria")
 		return ob, name, nil
 
 	case "tuic":
 		ob := base("tuic", 443)
 		ob["uuid"] = user
 		ob["password"] = pass
-		ob["congestion_control"] = firstNonEmpty(q.Get("congestion_control"), "bbr")
+		ob["congestion_control"] = FirstNonEmpty(q.Get("congestion_control"), "bbr")
 		if m := q.Get("udp_relay_mode"); m != "" {
 			ob["udp_relay_mode"] = m
 		}
-		ob["tls"] = quicTLS(firstNonEmpty(q.Get("sni"), host), truthy(q.Get("allow_insecure"), q.Get("insecure")), q.Get("alpn"), "h3")
+		ob["tls"] = quicTLS(FirstNonEmpty(q.Get("sni"), host), Truthy(q.Get("allow_insecure"), q.Get("insecure")), q.Get("alpn"), "h3")
 		return ob, name, nil
 
 	case "anytls":
 		ob := base("anytls", 443)
-		ob["password"] = firstNonEmpty(user, pass)
-		ob["tls"] = map[string]any{"enabled": true, "server_name": firstNonEmpty(q.Get("sni"), host),
-			"insecure": truthy(q.Get("insecure"), q.Get("allowInsecure"))}
+		ob["password"] = FirstNonEmpty(user, pass)
+		ob["tls"] = map[string]any{"enabled": true, "server_name": FirstNonEmpty(q.Get("sni"), host),
+			"insecure": Truthy(q.Get("insecure"), q.Get("allowInsecure"))}
 		return ob, name, nil
 
 	case "wireguard", "wg":
-		ob := map[string]any{"type": "wireguard", "private_key": firstNonEmpty(user, q.Get("privatekey"), q.Get("private_key"))}
+		ob := map[string]any{"type": "wireguard", "private_key": FirstNonEmpty(user, q.Get("privatekey"), q.Get("private_key"))}
 		if port == 0 {
 			port = 51820
 		}
-		addr := firstNonEmpty(q.Get("address"), q.Get("ip"), "172.16.0.2/32")
+		addr := FirstNonEmpty(q.Get("address"), q.Get("ip"), "172.16.0.2/32")
 		var addrs []string
 		for _, a := range strings.Split(addr, ",") {
 			a = strings.TrimSpace(a)
@@ -158,19 +158,19 @@ func parseLink(link string) (map[string]any, string, error) {
 			addrs = append(addrs, a)
 		}
 		ob["address"] = addrs
-		if m := atoiDef(q.Get("mtu"), 0); m > 0 {
+		if m := AtoiDef(q.Get("mtu"), 0); m > 0 {
 			ob["mtu"] = m
 		}
 		peer := map[string]any{"address": host, "port": port,
-			"public_key":  firstNonEmpty(q.Get("publickey"), q.Get("public_key"), q.Get("peer")),
+			"public_key":  FirstNonEmpty(q.Get("publickey"), q.Get("public_key"), q.Get("peer")),
 			"allowed_ips": []string{"0.0.0.0/0", "::/0"}}
-		if psk := firstNonEmpty(q.Get("presharedkey"), q.Get("psk")); psk != "" {
+		if psk := FirstNonEmpty(q.Get("presharedkey"), q.Get("psk")); psk != "" {
 			peer["pre_shared_key"] = psk
 		}
 		if r := q.Get("reserved"); r != "" {
 			var res []int
 			for _, x := range strings.Split(r, ",") {
-				res = append(res, atoiDef(strings.TrimSpace(x), 0))
+				res = append(res, AtoiDef(strings.TrimSpace(x), 0))
 			}
 			peer["reserved"] = res
 		}
@@ -179,11 +179,11 @@ func parseLink(link string) (map[string]any, string, error) {
 
 	case "ssh":
 		ob := base("ssh", 22)
-		ob["user"] = firstNonEmpty(user, "root")
+		ob["user"] = FirstNonEmpty(user, "root")
 		if pass != "" {
 			ob["password"] = pass
 		}
-		if pk := firstNonEmpty(q.Get("pk"), q.Get("private_key")); pk != "" {
+		if pk := FirstNonEmpty(q.Get("pk"), q.Get("private_key")); pk != "" {
 			ob["private_key"] = pk
 		}
 		if hk := q.Get("host_key"); hk != "" {
@@ -214,7 +214,7 @@ func parseLink(link string) (map[string]any, string, error) {
 		if scheme == "naive+quic" {
 			ob["quic"] = true
 		}
-		ob["tls"] = map[string]any{"enabled": true, "server_name": firstNonEmpty(q.Get("sni"), host)}
+		ob["tls"] = map[string]any{"enabled": true, "server_name": FirstNonEmpty(q.Get("sni"), host)}
 		return ob, name, nil
 
 	// OpenConnect family (Cisco AnyConnect / ocserv, Fortinet, GlobalProtect, Pulse, F5):
@@ -224,7 +224,7 @@ func parseLink(link string) (map[string]any, string, error) {
 		if _, known := map[string]bool{"anyconnect": true, "fortinet": true, "gp": true, "pulse": true, "f5": true}[scheme]; known {
 			flavor = scheme
 		}
-		flavor = firstNonEmpty(q.Get("flavor"), q.Get("protocol"), flavor, "anyconnect")
+		flavor = FirstNonEmpty(q.Get("flavor"), q.Get("protocol"), flavor, "anyconnect")
 		srv := "https://" + host
 		if port != 0 && port != 443 {
 			srv += ":" + strconv.Itoa(port)
@@ -236,13 +236,13 @@ func parseLink(link string) (map[string]any, string, error) {
 		if user != "" {
 			ob["username"], ob["password"] = user, pass
 		}
-		if g := firstNonEmpty(q.Get("group"), q.Get("authgroup")); g != "" {
+		if g := FirstNonEmpty(q.Get("group"), q.Get("authgroup")); g != "" {
 			ob["auth_group"] = g
 		}
-		if truthy(q.Get("insecure"), q.Get("allowInsecure")) {
+		if Truthy(q.Get("insecure"), q.Get("allowInsecure")) {
 			ob["tls"] = map[string]any{"insecure": true}
 		}
-		if fp := firstNonEmpty(q.Get("servercert"), q.Get("pin")); fp != "" {
+		if fp := FirstNonEmpty(q.Get("servercert"), q.Get("pin")); fp != "" {
 			ob["tls"] = map[string]any{"peer_fingerprint": []string{fp}}
 		}
 		return ob, name, nil
@@ -253,7 +253,7 @@ func parseLink(link string) (map[string]any, string, error) {
 			ob["username"], ob["password"] = user, pass
 		}
 		if scheme == "https" {
-			ob["tls"] = map[string]any{"enabled": true, "server_name": firstNonEmpty(q.Get("sni"), host)}
+			ob["tls"] = map[string]any{"enabled": true, "server_name": FirstNonEmpty(q.Get("sni"), host)}
 		}
 		return ob, name, nil
 	}
@@ -286,13 +286,13 @@ func parseVMess(payload string) (map[string]any, string, error) {
 	if host == "" {
 		return nil, "", errors.New("vmess: no address")
 	}
-	ob := map[string]any{"type": "vmess", "server": host, "server_port": atoiDef(s("port"), 443),
-		"uuid": s("id"), "security": firstNonEmpty(s("scy"), "auto"), "alter_id": atoiDef(s("aid"), 0),
+	ob := map[string]any{"type": "vmess", "server": host, "server_port": AtoiDef(s("port"), 443),
+		"uuid": s("id"), "security": FirstNonEmpty(s("scy"), "auto"), "alter_id": AtoiDef(s("aid"), 0),
 		"packet_encoding": "xudp"}
 	if err := v2Transport(ob, s("net"), s("type"), s("path"), s("host"), s("path"), s("mode")); err != nil {
 		return nil, s("ps"), err
 	}
-	v2TLS(ob, s("tls"), s("sni"), s("fp"), s("alpn"), truthy(s("allowInsecure")), "", "", firstNonEmpty(s("host"), host))
+	v2TLS(ob, s("tls"), s("sni"), s("fp"), s("alpn"), Truthy(s("allowInsecure")), "", "", FirstNonEmpty(s("host"), host))
 	return ob, s("ps"), nil
 }
 
@@ -336,7 +336,7 @@ func parseSS(link string) (map[string]any, string, error) {
 	if err != nil {
 		return nil, name, err
 	}
-	ob := map[string]any{"type": "shadowsocks", "server": host, "server_port": atoiDef(p, 8388),
+	ob := map[string]any{"type": "shadowsocks", "server": host, "server_port": AtoiDef(p, 8388),
 		"method": method, "password": password}
 	if query != "" {
 		q, _ := url.ParseQuery(query)
@@ -370,10 +370,10 @@ func v2Transport(ob map[string]any, network, headerType, path, host, service, mo
 			ob["transport"] = t
 		}
 	case "ws", "websocket":
-		t := map[string]any{"type": "ws", "path": firstNonEmpty(path, "/")}
+		t := map[string]any{"type": "ws", "path": FirstNonEmpty(path, "/")}
 		if u, err := url.Parse(t["path"].(string)); err == nil {
 			if ed := u.Query().Get("ed"); ed != "" {
-				t["max_early_data"] = atoiDef(ed, 0)
+				t["max_early_data"] = AtoiDef(ed, 0)
 				t["early_data_header_name"] = "Sec-WebSocket-Protocol"
 				q := u.Query()
 				q.Del("ed")
@@ -386,15 +386,15 @@ func v2Transport(ob map[string]any, network, headerType, path, host, service, mo
 		}
 		ob["transport"] = t
 	case "grpc":
-		ob["transport"] = map[string]any{"type": "grpc", "service_name": firstNonEmpty(service, path)}
+		ob["transport"] = map[string]any{"type": "grpc", "service_name": FirstNonEmpty(service, path)}
 	case "httpupgrade":
-		t := map[string]any{"type": "httpupgrade", "path": firstNonEmpty(path, "/")}
+		t := map[string]any{"type": "httpupgrade", "path": FirstNonEmpty(path, "/")}
 		if host != "" {
 			t["host"] = host
 		}
 		ob["transport"] = t
 	case "h2", "http":
-		t := map[string]any{"type": "http", "path": firstNonEmpty(path, "/")}
+		t := map[string]any{"type": "http", "path": FirstNonEmpty(path, "/")}
 		if host != "" {
 			t["host"] = strings.Split(host, ",")
 		}
@@ -415,7 +415,7 @@ func v2TLS(ob map[string]any, security, sni, fp, alpn string, insecure bool, pbk
 	default:
 		return
 	}
-	t := map[string]any{"enabled": true, "server_name": firstNonEmpty(sni, fallbackSNI)}
+	t := map[string]any{"enabled": true, "server_name": FirstNonEmpty(sni, fallbackSNI)}
 	if insecure {
 		t["insecure"] = true
 	}
@@ -460,7 +460,7 @@ func b64(s string) ([]byte, error) {
 	return nil, errors.New("invalid base64")
 }
 
-func firstNonEmpty(v ...string) string {
+func FirstNonEmpty(v ...string) string {
 	for _, s := range v {
 		if s != "" {
 			return s
@@ -469,7 +469,7 @@ func firstNonEmpty(v ...string) string {
 	return ""
 }
 
-func truthy(v ...string) bool {
+func Truthy(v ...string) bool {
 	for _, s := range v {
 		if s == "1" || strings.EqualFold(s, "true") {
 			return true
@@ -478,16 +478,16 @@ func truthy(v ...string) bool {
 	return false
 }
 
-func atoiDef(s string, def int) int {
+func AtoiDef(s string, def int) int {
 	if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
 		return n
 	}
 	return def
 }
 
-// splitLinks extracts links from a subscription body or pasted text:
+// SplitLinks extracts links from a subscription body or pasted text:
 // plain lines, base64 of lines, or a sing-box JSON with "outbounds".
-func splitLinks(body string) []string {
+func SplitLinks(body string) []string {
 	body = strings.TrimSpace(strings.TrimPrefix(body, "\ufeff"))
 	if strings.HasPrefix(body, "{") || strings.HasPrefix(body, "[") {
 		var cfg struct {
@@ -515,7 +515,7 @@ func splitLinks(body string) []string {
 		return out
 	}
 	if strings.Contains(body, "proxies:") {
-		if list := clashProxies(body); len(list) > 0 {
+		if list := ClashProxies(body); len(list) > 0 {
 			return list
 		}
 	}
@@ -523,7 +523,7 @@ func splitLinks(body string) []string {
 		if d, err := b64(strings.Join(strings.Fields(body), "")); err == nil {
 			body = string(d)
 			if strings.Contains(body, "proxies:") {
-				if list := clashProxies(body); len(list) > 0 {
+				if list := ClashProxies(body); len(list) > 0 {
 					return list
 				}
 			}
@@ -537,4 +537,17 @@ func splitLinks(body string) []string {
 		}
 	}
 	return out
+}
+
+// NeedsXray: VLESS XHTTP / SplitHTTP, which only Xray-core supports.
+func NeedsXray(link string) bool {
+	if !strings.HasPrefix(strings.ToLower(link), "vless://") {
+		return false
+	}
+	u, err := url.Parse(link)
+	if err != nil {
+		return false
+	}
+	t := strings.ToLower(u.Query().Get("type"))
+	return t == "xhttp" || t == "splithttp"
 }

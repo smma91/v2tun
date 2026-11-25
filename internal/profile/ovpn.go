@@ -1,4 +1,4 @@
-package main
+package profile
 
 import (
 	"bufio"
@@ -80,7 +80,7 @@ func ovpnToOutbound(text, dir, user, pass string) (map[string]any, bool, error) 
 			}
 			servers = append(servers, r)
 		case "port", "rport":
-			defPort = atoiDef(arg(0), defPort)
+			defPort = AtoiDef(arg(0), defPort)
 		case "proto":
 			defProto = ovpnNet(arg(0))
 		case "remote-random":
@@ -138,13 +138,13 @@ func ovpnToOutbound(text, dir, user, pass string) (map[string]any, bool, error) 
 		case "tls-version-max":
 			tls["version_max"] = arg(0)
 		case "compress":
-			ob["compression"] = firstNonEmpty(arg(0), "stub")
+			ob["compression"] = FirstNonEmpty(arg(0), "stub")
 		case "comp-lzo":
-			ob["compression_lzo"] = firstNonEmpty(arg(0), "adaptive")
+			ob["compression_lzo"] = FirstNonEmpty(arg(0), "adaptive")
 		case "fragment":
-			ob["fragment"] = atoiDef(arg(0), 0)
+			ob["fragment"] = AtoiDef(arg(0), 0)
 		case "mssfix":
-			if n := atoiDef(arg(0), 0); n > 0 {
+			if n := AtoiDef(arg(0), 0); n > 0 {
 				ob["mss_fix"] = n
 			}
 		}
@@ -235,8 +235,8 @@ func ovpnNet(p string) string {
 	return "udp"
 }
 
-// ovpnFileToLink reads a profile and returns the server entry (JSON) to store.
-func ovpnFileToLink(path, user, pass string) (string, error) {
+// OvpnFileToLink reads a profile and returns the server entry (JSON) to store.
+func OvpnFileToLink(path, user, pass string) (string, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return "", err

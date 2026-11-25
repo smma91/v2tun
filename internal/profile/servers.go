@@ -1,4 +1,4 @@
-package main
+package profile
 
 import (
 	"crypto/sha1"
@@ -29,8 +29,8 @@ type Server struct {
 	Tested int64   `json:"tested"`
 }
 
-func (s *Server) outbound() (map[string]any, error) {
-	ob, _, err := parseLink(s.Link)
+func (s *Server) Outbound() (map[string]any, error) {
+	ob, _, err := ParseLink(s.Link)
 	return ob, err
 }
 
@@ -51,15 +51,22 @@ type ServerStore struct {
 	Failover  bool            `json:"failover"`  // switch away from a dead selected server
 }
 
-type serverDB struct {
+type DB struct {
 	mu sync.Mutex
 	st ServerStore
 }
 
-func storePath() string { return filepath.Join(dataDir(), "servers.json") }
+// StorePath is the servers file; WriteFile writes it (the programs set both:
+// the desktop app protects it with file permissions).
+var (
+	StorePath = func() string { return filepath.Join(os.TempDir(), "v2tun-servers.json") }
+	WriteFile = func(path string, b []byte) error { return os.WriteFile(path, b, 0o600) }
+)
 
-func loadServerDB() *serverDB {
-	db := &serverDB{st: ServerStore{Selected: "auto", AutoHours: 12, Failover: true}}
+func storePath() string { return StorePath() }
+
+func Load() *DB {
+	db := &DB{st: ServerStore{Selected: "auto", AutoHours: 12, Failover: true}}
 	if b, err := os.ReadFile(storePath()); err == nil {
 		json.Unmarshal(b, &db.st)
 	}
@@ -69,13 +76,13 @@ func loadServerDB() *serverDB {
 	return db
 }
 
-func (db *serverDB) saveLocked() {
+func (db *DB) saveLocked() {
 	b, _ := json.MarshalIndent(db.st, "", "  ")
-	writeSecret(storePath(), b)
+	WriteFile(storePath(), b)
 }
 
 // Snapshot returns a deep-enough copy for the UI / core.
-func (db *serverDB) Snapshot() ServerStore {
+func (db *DB) Snapshot() ServerStore {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	st := db.st
@@ -97,9 +104,9 @@ func linkID(link string) string {
 	return "s" + hex.EncodeToString(h[:6])
 }
 
-func newServer(link, sub string) *Server {
+func NewServer(link, sub string) *Server {
 	s := &Server{ID: linkID(link), Sub: sub, Link: strings.TrimSpace(link)}
-	if needsXray(s.Link) {
+	if NeedsXray(s.Link) {
 		if u, err := url.Parse(s.Link); err == nil {
 			s.Type, s.Name, s.Addr = "vless-xhttp", u.Fragment, u.Host
 		}
@@ -108,7 +115,7 @@ func newServer(link, sub string) *Server {
 		}
 		return s
 	}
-	ob, name, err := parseLink(link)
+	ob, name, err := ParseLink(link)
 	if err != nil {
 		s.Error = err.Error()
 	}
@@ -138,9 +145,9 @@ func newServer(link, sub string) *Server {
 	return s
 }
 
-// isSubURL: an http(s) address with a path and no credentials is a
+// IsSubURL: an http(s) address with a path and no credentials is a
 // subscription, not an HTTP proxy server (http://user:pass@host:port).
-func isSubURL(l string) bool {
+func IsSubURL(l string) bool {
 	u, err := url.Parse(strings.TrimSpace(l))
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil {
 		return false
@@ -152,7 +159,7 @@ func isSubURL(l string) bool {
 func SplitSubURLs(text string) (subs []string, rest string) {
 	var keep []string
 	for _, l := range strings.Split(strings.ReplaceAll(text, "\r", ""), "\n") {
-		if isSubURL(l) {
+		if IsSubURL(l) {
 			subs = append(subs, strings.TrimSpace(l))
 		} else {
 			keep = append(keep, l)
@@ -161,17 +168,17 @@ func SplitSubURLs(text string) (subs []string, rest string) {
 	return subs, strings.Join(keep, "\n")
 }
 
-// migrateSubs fixes subscription URLs that were stored as HTTP proxy servers.
-func (db *serverDB) migrateSubs() []string {
+// MigrateSubs fixes subscription URLs that were stored as HTTP proxy servers.
+func (db *DB) MigrateSubs() []string {
 	db.mu.Lock()
 	var urls []string
 	for _, s := range db.st.Servers {
-		if s.Sub == "" && isSubURL(s.Link) {
+		if s.Sub == "" && IsSubURL(s.Link) {
 			urls = append(urls, s.Link)
 		}
 	}
 	if len(urls) > 0 {
-		db.removeWhereLocked(func(s *Server) bool { return s.Sub == "" && isSubURL(s.Link) })
+		db.removeWhereLocked(func(s *Server) bool { return s.Sub == "" && IsSubURL(s.Link) })
 		db.saveLocked()
 	}
 	db.mu.Unlock()
@@ -179,8 +186,8 @@ func (db *serverDB) migrateSubs() []string {
 }
 
 // AddLinks adds manually pasted links; returns how many were new.
-func (db *serverDB) AddLinks(text string) (int, error) {
-	links := splitLinks(text)
+func (db *DB) AddLinks(text string) (int, error) {
+	links := SplitLinks(text)
 	if len(links) == 0 {
 		return 0, trErr("No valid link or config found")
 	}
@@ -192,7 +199,7 @@ func (db *serverDB) AddLinks(text string) (int, error) {
 	}
 	n := 0
 	for _, l := range links {
-		s := newServer(l, "")
+		s := NewServer(l, "")
 		if have[s.ID] {
 			continue
 		}
@@ -204,7 +211,7 @@ func (db *serverDB) AddLinks(text string) (int, error) {
 	return n, nil
 }
 
-func (db *serverDB) AddSub(name, rawURL string) (*Subscription, error) {
+func (db *DB) AddSub(name, rawURL string) (*Subscription, error) {
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
 		return nil, trErr("The subscription URL must start with http:// or https://")
 	}
@@ -227,7 +234,7 @@ func (db *serverDB) AddSub(name, rawURL string) (*Subscription, error) {
 	return sub, nil
 }
 
-func (db *serverDB) RemoveSub(id string) {
+func (db *DB) RemoveSub(id string) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	subs := db.st.Subs[:0]
@@ -241,14 +248,14 @@ func (db *serverDB) RemoveSub(id string) {
 	db.saveLocked()
 }
 
-func (db *serverDB) RemoveServer(id string) {
+func (db *DB) RemoveServer(id string) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	db.removeWhereLocked(func(s *Server) bool { return s.ID == id })
 	db.saveLocked()
 }
 
-func (db *serverDB) removeWhereLocked(drop func(*Server) bool) {
+func (db *DB) removeWhereLocked(drop func(*Server) bool) {
 	keep := db.st.Servers[:0]
 	for _, s := range db.st.Servers {
 		if !drop(s) {
@@ -261,7 +268,7 @@ func (db *serverDB) removeWhereLocked(drop func(*Server) bool) {
 	}
 }
 
-func (db *serverDB) findLocked(id string) *Server {
+func (db *DB) findLocked(id string) *Server {
 	for _, s := range db.st.Servers {
 		if s.ID == id {
 			return s
@@ -270,21 +277,21 @@ func (db *serverDB) findLocked(id string) *Server {
 	return nil
 }
 
-func (db *serverDB) SetSelected(id string) {
+func (db *DB) SetSelected(id string) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	db.st.Selected = id
 	db.saveLocked()
 }
 
-func (db *serverDB) SetOptions(autoHours int, failover bool) {
+func (db *DB) SetOptions(autoHours int, failover bool) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	db.st.AutoHours, db.st.Failover = autoHours, failover
 	db.saveLocked()
 }
 
-func (db *serverDB) SetPings(d map[string]int) {
+func (db *DB) SetPings(d map[string]int) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	for _, s := range db.st.Servers {
@@ -295,7 +302,7 @@ func (db *serverDB) SetPings(d map[string]int) {
 	db.saveLocked()
 }
 
-func (db *serverDB) SetSpeed(id string, mbps float64) {
+func (db *DB) SetSpeed(id string, mbps float64) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	if s := db.findLocked(id); s != nil {
@@ -304,7 +311,7 @@ func (db *serverDB) SetSpeed(id string, mbps float64) {
 	db.saveLocked()
 }
 
-func (db *serverDB) SetDelays(d map[string]int) {
+func (db *DB) SetDelays(d map[string]int) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	now := time.Now().Unix()
@@ -316,9 +323,9 @@ func (db *serverDB) SetDelays(d map[string]int) {
 	db.saveLocked()
 }
 
-// fetchSub downloads a subscription. get is the HTTP client to use (through
+// FetchSub downloads a subscription. get is the HTTP client to use (through
 // the tunnel when it is up, so the provider does not see the real IP).
-func fetchSub(client *http.Client, rawURL string) ([]string, error) {
+func FetchSub(client *http.Client, rawURL string) ([]string, error) {
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
 		return nil, err
@@ -337,7 +344,7 @@ func fetchSub(client *http.Client, rawURL string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	links := splitLinks(string(b))
+	links := SplitLinks(string(b))
 	if len(links) == 0 {
 		return nil, trErr("The subscription did not contain any link")
 	}
@@ -346,7 +353,7 @@ func fetchSub(client *http.Client, rawURL string) ([]string, error) {
 
 // ApplySub replaces the servers of a subscription, keeping delays of
 // servers that did not change.
-func (db *serverDB) ApplySub(id string, links []string, fetchErr error) {
+func (db *DB) ApplySub(id string, links []string, fetchErr error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	var sub *Subscription
@@ -372,7 +379,7 @@ func (db *serverDB) ApplySub(id string, links []string, fetchErr error) {
 	db.removeWhereLocked(func(s *Server) bool { return s.Sub == id })
 	seen := map[string]bool{}
 	for _, l := range links {
-		s := newServer(l, id)
+		s := NewServer(l, id)
 		if seen[s.ID] {
 			continue
 		}

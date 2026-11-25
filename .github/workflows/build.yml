@@ -11,7 +11,7 @@ permissions:
 
 env:
   TAGS: desktop,production,with_quic,with_utls,with_wireguard,with_gvisor,with_naive_outbound,with_purego,with_openvpn,with_openconnect
-  UNIT_TESTS: TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP|TestProcIP
+  UNIT_TESTS: TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP|TestProcIP|TestPortUnreachable
 
 jobs:
   windows:
@@ -29,10 +29,10 @@ jobs:
         env:
           GOTOOLCHAIN: go1.26.11
         run: |
-          go vet -tags $env:TAGS ./cmd/v2tun
+          go vet -tags $env:TAGS ./cmd/v2tun ./internal/...
           # the resource file clashes with the test binary's own manifest
           Rename-Item cmd/v2tun/rsrc_windows_amd64.syso rsrc.syso.bak
-          go test -tags $env:TAGS -count=1 -run $env:UNIT_TESTS ./cmd/v2tun
+          go test -tags $env:TAGS -count=1 -run $env:UNIT_TESTS ./cmd/v2tun ./internal/...
           $code = $LASTEXITCODE
           Rename-Item cmd/v2tun/rsrc.syso.bak rsrc_windows_amd64.syso
           exit $code
@@ -78,8 +78,8 @@ jobs:
         env:
           GOTOOLCHAIN: go1.26.11
         run: |
-          go vet -tags "$TAGS,webkit2_41" ./cmd/v2tun
-          go test -tags "$TAGS,webkit2_41" -count=1 -run "$UNIT_TESTS" ./cmd/v2tun
+          go vet -tags "$TAGS,webkit2_41" ./cmd/v2tun ./internal/...
+          go test -tags "$TAGS,webkit2_41" -count=1 -run "$UNIT_TESTS" ./cmd/v2tun ./internal/...
 
       - name: Packages
         env:
