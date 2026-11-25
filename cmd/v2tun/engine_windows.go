@@ -33,7 +33,7 @@ func (e *Engine) configureTun(dev *tunDevice, dns []string) (uint32, error) {
 	// address stays "tentative" for seconds, Windows answers "host unreachable"
 	// and caches the failed DNS lookups made meanwhile.
 	run("netsh", "interface", "ipv4", "set", "interface", i, "dadtransmits=0", "metric=1")
-	if err := run("netsh", "interface", "ipv4", "set", "address", "name="+i, "source=static", "address="+tunAddr, "mask="+tunMask); err != nil {
+	if err := run("netsh", "interface", "ipv4", "set", "address", "name="+i, "source=static", "address="+e.chooseTunAddr(luid), "mask="+tunMask); err != nil {
 		return 0, err
 	}
 	if !waitAddrReady(luid, 8*time.Second) {

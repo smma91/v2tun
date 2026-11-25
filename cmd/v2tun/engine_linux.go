@@ -38,7 +38,10 @@ func (e *Engine) configureTun(dev *tunDevice, dns []string) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	addr, _ := netlink.ParseAddr(tunAddr + "/30")
+	addr, err := netlink.ParseAddr(e.chooseTunAddr(uint64(link.Attrs().Index)) + "/30")
+	if err != nil {
+		return 0, err
+	}
 	if err := netlink.AddrReplace(link, addr); err != nil {
 		return 0, err
 	}
