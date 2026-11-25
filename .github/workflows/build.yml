@@ -94,9 +94,62 @@ jobs:
           name: linux
           path: dist/*
 
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Mobile package tests
+        env:
+          GOTOOLCHAIN: go1.26.11
+        run: go test -tags with_gvisor,with_quic,with_wireguard,with_utls -count=1 ./mobile
+
+      - name: Go library (gomobile)
+        env:
+          GOTOOLCHAIN: go1.26.11
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          bash build/android/build-aar.sh
+
+      - name: APKs
+        env:
+          V2TUN_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          V2TUN_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          V2TUN_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          V2TUN_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then export V2TUN_VERSION="${GITHUB_REF_NAME#v}"; else export V2TUN_VERSION="0.0.0-dev"; fi
+          if [ -n "$V2TUN_KEYSTORE_BASE64" ]; then
+            echo "$V2TUN_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export V2TUN_KEYSTORE="$RUNNER_TEMP/release.jks"
+          fi
+          cd android
+          ./gradlew assembleRelease --no-daemon --console=plain
+          mkdir -p ../dist
+          for f in app/build/outputs/apk/release/app-*-release.apk; do
+            abi=$(basename "$f" | sed -e 's/^app-//' -e 's/-release.apk$//')
+            cp "$f" "../dist/v2tun-$V2TUN_VERSION-android-$abi.apk"
+          done
+          cd ../dist && sha256sum ./*.apk > SHA256SUMS-android.txt && ls -la
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: android
+          path: dist/*
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [windows, linux]
+    needs: [windows, linux, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v5

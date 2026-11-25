@@ -1,7 +1,8 @@
 //go:build ignore
 
 // genicon draws the app icon (a shield): the Windows .ico files, the tray icons
-// for Linux (PNG) and the icon used by the UI and the Linux packages.
+// for Linux (PNG), the icon used by the UI and the Linux packages, and the
+// Android launcher icons and Android TV banner.
 package main
 
 import (
@@ -94,6 +95,51 @@ func main() {
 	os.WriteFile("cmd/v2tun/assets/tray_off.png", draw(64), 0o644)
 	cur = blue
 	png.Encode(must(os.Create("cmd/v2tun/frontend/icon.png")), decode(draw(256)))
+
+	// Android launcher icons (dark rounded square with the shield) and the
+	// Android TV banner (320x180).
+	res := "android/app/src/main/res/"
+	for dir, size := range map[string]int{"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192} {
+		os.MkdirAll(res+"mipmap-"+dir, 0o755)
+		png.Encode(must(os.Create(res+"mipmap-"+dir+"/ic_launcher.png")), onBackground(size, size, size*3/4))
+	}
+	os.MkdirAll(res+"drawable-xhdpi", 0o755)
+	png.Encode(must(os.Create(res+"drawable-xhdpi/banner.png")), onBackground(320, 180, 150))
+}
+
+// onBackground draws the shield (size s) centred on the app's dark colour,
+// with rounded corners.
+func onBackground(w, h, s int) image.Image {
+	cur = blue
+	shield := decode(draw(s))
+	img := image.NewNRGBA(image.Rect(0, 0, w, h))
+	bg := color.NRGBA{11, 15, 25, 255}
+	r := float64(min(w, h)) * 0.18
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			// rounded rectangle mask
+			dx := math.Max(0, math.Max(r-float64(x)-0.5, float64(x)+0.5-float64(w)+r))
+			dy := math.Max(0, math.Max(r-float64(y)-0.5, float64(y)+0.5-float64(h)+r))
+			if math.Hypot(dx, dy) <= r {
+				img.Set(x, y, bg)
+			}
+		}
+	}
+	ox, oy := (w-s)/2, (h-s)/2
+	for y := 0; y < s; y++ {
+		for x := 0; x < s; x++ {
+			c := color.NRGBAModel.Convert(shield.At(x, y)).(color.NRGBA)
+			if c.A == 0 {
+				continue
+			}
+			b := img.NRGBAAt(ox+x, oy+y)
+			a := float64(c.A) / 255
+			img.SetNRGBA(ox+x, oy+y, color.NRGBA{
+				uint8(float64(c.R)*a + float64(b.R)*(1-a)), uint8(float64(c.G)*a + float64(b.G)*(1-a)),
+				uint8(float64(c.B)*a + float64(b.B)*(1-a)), 255})
+		}
+	}
+	return img
 }
 
 func writeICO(name string, p palette, sizes []int) {

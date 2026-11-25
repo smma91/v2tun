@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"v2tun/internal/profile"
 
 	box "github.com/sagernet/sing-box"
 	"github.com/sagernet/sing-box/common/urltest"
@@ -24,7 +25,7 @@ import (
 	N "github.com/sagernet/sing/common/network"
 )
 
-const testURL = "https://www.gstatic.com/generate_204"
+const testURL = profile.TestURL
 
 // coreManager runs the embedded sing-box core. It exposes one local SOCKS/HTTP
 // port that the tunnel engine uses exactly like v2rayN's port. All outgoing
@@ -77,55 +78,22 @@ func freePort() (int, error) {
 
 // coreConfig builds a sing-box configuration from the server list.
 func coreConfig(port int, uplink uplink, servers []*Server, selected string) ([]byte, map[string]bool, error) {
-	var outbounds, endpoints []any
-	var tags []string
-	present := map[string]bool{}
 	viaXray := map[string]bool{}
-	for _, s := range servers {
-		var ob map[string]any
-		if needsXray(s.Link) {
-			// VLESS XHTTP: a dedicated embedded Xray instance, reached over local SOCKS.
-			p, err := xrays.ensure(s.ID, s.Link, uplink)
-			if err != nil {
-				writeLogFile(LogLine{Level: "warn", Msg: "xray " + s.Name + ": " + err.Error()})
-				continue
-			}
-			ob = map[string]any{"type": "socks", "server": "127.0.0.1", "server_port": p, "version": "5"}
-			viaXray[s.ID] = true
-		} else {
-			var err error
-			if ob, err = s.Outbound(); err != nil {
-				continue
-			}
+	// VLESS XHTTP: a dedicated embedded Xray instance, reached over local SOCKS.
+	xhttp := func(s *Server) (map[string]any, error) {
+		p, err := xrays.ensure(s.ID, s.Link, uplink)
+		if err != nil {
+			writeLogFile(LogLine{Level: "warn", Msg: "xray " + s.Name + ": " + err.Error()})
+			return nil, err
 		}
-		ob["tag"] = s.ID
-		// WireGuard, OpenVPN and OpenConnect are "endpoints" in sing-box.
-		if t := ob["type"]; t == "wireguard" || t == "openvpn-client" || t == "openconnect" {
-			endpoints = append(endpoints, ob)
-		} else {
-			outbounds = append(outbounds, ob)
-		}
-		tags = append(tags, s.ID)
-		present[s.ID] = true
+		viaXray[s.ID] = true
+		return map[string]any{"type": "socks", "server": "127.0.0.1", "server_port": p, "version": "5"}, nil
 	}
+	outbounds, endpoints, present, err := profile.Outbounds(servers, selected, xhttp)
 	xrays.keep(viaXray)
-	if len(tags) == 0 {
-		return nil, nil, trErr("No usable server in the list")
+	if err != nil {
+		return nil, nil, err
 	}
-	if selected == "" || (selected != "auto" && !present[selected]) {
-		selected = "auto"
-	}
-	// Switching servers (auto "fastest" or a manual choice) only affects NEW
-	// connections: open ones (downloads, calls, games) keep their server until
-	// they end, instead of being cut and timing out. A higher tolerance also
-	// stops "auto" from hopping between servers of similar speed.
-	outbounds = append(outbounds,
-		map[string]any{"type": "urltest", "tag": "auto", "outbounds": tags, "url": testURL,
-			"interval": "3m", "tolerance": 150, "idle_timeout": "30m", "interrupt_exist_connections": false},
-		map[string]any{"type": "selector", "tag": "select", "outbounds": append([]string{"auto"}, tags...),
-			"default": selected, "interrupt_exist_connections": false},
-		map[string]any{"type": "direct", "tag": "direct"},
-	)
 
 	dns := "1.1.1.1"
 	if len(uplink.DNS) > 0 {

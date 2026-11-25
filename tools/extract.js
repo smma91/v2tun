@@ -34,6 +34,13 @@ for (const f of [...goFiles(root), ...goFiles(path.join(__dirname, "..", "intern
   for (const m of src.matchAll(/\bpick\(\s*"((?:\\.|[^"\\])*)",\s*"((?:\\.|[^"\\])*)"/g)) { out.add(JSON.parse('"' + m[1] + '"')); out.add(JSON.parse('"' + m[2] + '"')); }
 }
 const used = new Set(out);
+// Android (Kotlin): tr("…").
+const ktFiles = (d) => !fs.existsSync(d) ? [] : fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+  e.isDirectory() ? ktFiles(path.join(d, e.name)) : e.name.endsWith(".kt") ? [path.join(d, e.name)] : []);
+for (const f of ktFiles(path.join(__dirname, "..", "android", "app", "src"))) {
+  for (const m of fs.readFileSync(f, "utf8").matchAll(/\btr\(\s*"((?:\\.|[^"\\])*)"/g)) out.add(JSON.parse('"' + m[1] + '"'));
+}
+for (const s of out) used.add(s); // Android-only texts count as used too
 for (const s of out) if (literal(s)) out.delete(s);
 
 const dict = JSON.parse(fs.readFileSync(path.join(root, "frontend/i18n.json"), "utf8"));

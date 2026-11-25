@@ -19,3 +19,11 @@
 .idea/
 Thumbs.db
 desktop.ini
+
+# Android build output and local files
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/app/libs/*.aar
+/android/app/libs/*.jar
