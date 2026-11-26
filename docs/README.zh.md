@@ -69,7 +69,7 @@
 - **本地代理**,供同一 Wi-Fi 或手机热点上的其他设备使用。
 - Android TV:专为遥控器(方向键)设计,主屏幕有电视横幅。
 - 省电:只在应用显示时统计实时数据,Doze 休眠时内核暂停。
-- Android 7.0 或更高版本。
+- Android 5.0 或更高版本。
 
 ### 🖥️ 桌面
 - 托盘图标、登录时启动（无密码或 UAC 提示）、自动连接。
@@ -118,12 +118,13 @@
 
 ## Android 与 Android TV
 
-**系统要求:** Android 7.0 或更高版本(手机、平板、Android TV)。
+**系统要求:** Android 5.0 或更高版本(手机、平板、Android TV)。
 
 从 [Releases](https://github.com/smma91/v2tun/releases) 下载 APK,并用 `SHA256SUMS.txt` 校验:
 
 | 文件 | 适用于 |
 |---|---|
+| `v2tun-<version>-android-tv.apk` | **Android TV**、电视盒子和电视棒 |
 | `v2tun-<version>-android-arm64-v8a.apk` | 几乎所有手机和较新的电视 |
 | `v2tun-<version>-android-armeabi-v7a.apk` | 较旧的手机和大多数电视盒子 / 电视棒 |
 | `v2tun-<version>-android-universal.apk` | 任何设备(体积更大) |

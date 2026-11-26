@@ -83,6 +83,7 @@
 
         <service
             android:name=".QuickTile"
+            tools:targetApi="24"
             android:exported="true"
             android:icon="@drawable/ic_tile"
             android:label="v2tun"

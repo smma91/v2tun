@@ -26,7 +26,7 @@ $targets = if ($Fast) { 'android/arm64' } else { 'android/arm64,android/arm,andr
 # badlinkname / -checklinkname=0: libbox reaches into Go internals (as sing-box's
 # own Android build does).
 $tags = 'with_gvisor,with_quic,with_wireguard,with_utls,with_openvpn,with_openconnect,badlinkname,tfogo_checklinkname0'
-gomobile bind -v -target $targets -androidapi 24 -javapkg io.github.smma91.v2tun -libname box `
+gomobile bind -v -target $targets -androidapi 21 -javapkg io.github.smma91.v2tun -libname box `
   -tags $tags -trimpath -ldflags '-s -w -buildid= -checklinkname=0' `
   -o android\app\libs\libv2tun.aar ./mobile github.com/sagernet/sing-box/experimental/libbox
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

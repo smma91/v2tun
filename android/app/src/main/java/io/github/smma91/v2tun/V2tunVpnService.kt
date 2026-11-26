@@ -79,7 +79,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     private var server: CommandServer? = null
     private var tunFd: ParcelFileDescriptor? = null
-    private val connectivity by lazy { getSystemService(ConnectivityManager::class.java) }
+    private val connectivity by lazy { getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager }
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var statusClient: CommandClient? = null
     @Volatile private var logClient: CommandClient? = null
@@ -163,7 +163,8 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private val idleReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val s = server ?: return
-            val idle = getSystemService(PowerManager::class.java).isDeviceIdleMode
+            if (Build.VERSION.SDK_INT < 23) return
+            val idle = (getSystemService(POWER_SERVICE) as PowerManager).isDeviceIdleMode
             runCatching { if (idle) s.pause() else s.wake() }
         }
     }
@@ -289,7 +290,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     // ---- notification (required for a foreground service) ----
 
     private fun showNotification() {
-        val nm = getSystemService(NotificationManager::class.java)
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) {
             nm.createNotificationChannel(NotificationChannel(CHANNEL, "VPN", NotificationManager.IMPORTANCE_LOW))
         }
@@ -307,7 +308,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             .setContentText(if (connected) tr("Connected") else tr("Connecting…"))
             .setContentIntent(open)
             .setOngoing(true)
-            .addAction(Notification.Action.Builder(null, tr("Disconnect"), stop).build())
+            .addAction(@Suppress("DEPRECATION") Notification.Action.Builder(0, tr("Disconnect"), stop).build())
             .build()
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(NOTIFICATION_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -391,7 +392,7 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
                 listener.updateDefaultInterface(name, index, metered, false)
             }
             // Android shows the VPN as using this network (metered, validated...).
-            runCatching { setUnderlyingNetworks(network?.let { arrayOf(it) }) }
+            if (Build.VERSION.SDK_INT >= 22) runCatching { setUnderlyingNetworks(network?.let { arrayOf(it) }) }
         }
         // Right away, so the core does not start without a network.
         report(realNetwork(null))
@@ -415,8 +416,10 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         val handler = android.os.Handler(monitorThread.looper)
         if (Build.VERSION.SDK_INT >= 31) {
             connectivity.registerBestMatchingNetworkCallback(request, cb, handler)
-        } else {
+        } else if (Build.VERSION.SDK_INT >= 26) {
             connectivity.requestNetwork(request, cb, handler)
+        } else {
+            connectivity.requestNetwork(request, cb) // callbacks on the main thread
         }
     }
 

@@ -87,7 +87,7 @@ The tables below are the full plan.
   library used by the desktop program and, through gomobile, by the apps.
 - **Android / Android TV:** Kotlin + Jetpack Compose (Compose for TV on the
   TV). The tunnel runs on sing-box's mobile layer (libbox) inside Android's
-  VpnService. Minimum Android 7 (API 24). APKs for arm64-v8a, armeabi-v7a
+  VpnService. Minimum Android 5 (API 21). APKs for arm64-v8a, armeabi-v7a
   and x86_64 on GitHub Releases.
 - **iOS** (later): Network Extension in Swift; needs an Apple Developer
   organisation account for App Store distribution of a VPN app.

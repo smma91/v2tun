@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
     /** TCP ping of every server over the real network (also while connected). */
     fun pingServers(done: () -> Unit) {
         val dns = runCatching {
-            val cm = getSystemService(ConnectivityManager::class.java)
+            val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
             cm.allNetworks.filter {
                 cm.getNetworkCapabilities(it)?.let { c ->
                     !c.hasTransport(NetworkCapabilities.TRANSPORT_VPN) && c.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

@@ -69,7 +69,7 @@
 - **Local proxy** for other devices on the same Wi-Fi or on the phone's hotspot.
 - Android TV: made for the remote (D-pad), with a TV banner on the home screen.
 - Battery friendly: live statistics only while the app is on screen, the core sleeps in Doze.
-- Android 7.0 or newer.
+- Android 5.0 or newer.
 
 ### 🖥️ Desktop
 - Tray icon, start at login (no password or UAC prompt), auto-connect.
@@ -132,13 +132,14 @@ Notes:
 
 ## Android and Android TV
 
-**Requirements:** Android 7.0 or newer (phones, tablets, Android TV).
+**Requirements:** Android 5.0 or newer (phones, tablets, Android TV).
 
 Download the APK from [Releases](../../releases) and check it against
 `SHA256SUMS.txt`:
 
 | File | For |
 |---|---|
+| `v2tun-<version>-android-tv.apk` | **Android TV**, TV boxes and sticks |
 | `v2tun-<version>-android-arm64-v8a.apk` | almost all phones and newer TVs |
 | `v2tun-<version>-android-armeabi-v7a.apk` | older phones and most TV boxes / sticks |
 | `v2tun-<version>-android-universal.apk` | any device (larger download) |

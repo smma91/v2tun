@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.smma91.v2tun"
-        minSdk = 24
+        minSdk = 21
         targetSdk = 35
         versionCode = maxOf(appVersionCode, 1)
         versionName = appVersion
@@ -24,7 +24,16 @@ android {
     // Release signing comes from the environment (GitHub secrets); without it
     // the release build is signed with the debug key (for testing only).
     signingConfigs {
+        // All signature schemes: some TVs' / boxes' installers need the old v1 (JAR) one.
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+        }
         create("release") {
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
             val ks = System.getenv("V2TUN_KEYSTORE")
             if (ks != null && file(ks).exists()) {
                 storeFile = file(ks)

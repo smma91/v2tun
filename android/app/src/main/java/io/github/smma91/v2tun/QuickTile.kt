@@ -11,6 +11,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /** Quick Settings tile: connect / disconnect without opening the app. */
+@androidx.annotation.RequiresApi(24) // Quick Settings tiles exist since Android 7
 class QuickTile : TileService() {
     private var scope: CoroutineScope? = null
 

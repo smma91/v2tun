@@ -13,7 +13,7 @@ mkdir -p android/app/libs
 # badlinkname / -checklinkname=0: libbox reaches into Go internals (as sing-box's
 # own Android build does). NaiveProxy is left out (it needs a native library).
 TAGS='with_gvisor,with_quic,with_wireguard,with_utls,with_openvpn,with_openconnect,badlinkname,tfogo_checklinkname0'
-gomobile bind -v -target "${TARGETS:-android/arm64,android/arm,android/amd64}" -androidapi 24 \
+gomobile bind -v -target "${TARGETS:-android/arm64,android/arm,android/amd64}" -androidapi 21 \
   -javapkg io.github.smma91.v2tun -libname box -tags "$TAGS" -trimpath \
   -ldflags '-s -w -buildid= -checklinkname=0' \
   -o android/app/libs/libv2tun.aar ./mobile github.com/sagernet/sing-box/experimental/libbox

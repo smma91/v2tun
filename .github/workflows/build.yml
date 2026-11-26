@@ -140,6 +140,9 @@ jobs:
             abi=$(basename "$f" | sed -e 's/^app-//' -e 's/-release.apk$//')
             cp "$f" "../dist/v2tun-$V2TUN_VERSION-android-$abi.apk"
           done
+          # Android TV: the 32-bit ARM build installs on practically every TV and box
+          # (many have a 64-bit processor but 32-bit Android).
+          cp "../dist/v2tun-$V2TUN_VERSION-android-armeabi-v7a.apk" "../dist/v2tun-$V2TUN_VERSION-android-tv.apk"
           cd ../dist && sha256sum ./*.apk > SHA256SUMS-android.txt && ls -la
 
       - uses: actions/upload-artifact@v5
