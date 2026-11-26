@@ -11,7 +11,7 @@ permissions:
 
 env:
   TAGS: desktop,production,with_quic,with_utls,with_wireguard,with_gvisor,with_naive_outbound,with_purego,with_openvpn,with_openconnect
-  UNIT_TESTS: TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP|TestProcIP|TestPortUnreachable|TestHandler|TestDNSTCP|TestMonitor|TestTunAddr|TestRouteConflict
+  UNIT_TESTS: TestT$|TestRules|TestSniff|TestFakeIP|TestParseLinks|TestNewFormats|TestHostsStrip|TestXrayXHTTP|TestProcIP|TestPortUnreachable|TestHandler|TestDNSTCPNoPool|TestMonitor|TestTunAddr|TestRouteConflict
 
 jobs:
   windows:
