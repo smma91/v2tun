@@ -37,6 +37,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -69,6 +71,7 @@ fun AppUi(activity: MainActivity) {
     val lang = remember(version) { Store.settings().optString("lang", "en").also { currentLang = it } }
     val dir = if (lang == "fa" || lang == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    val powerFocus = remember { FocusRequester() }
     // TVs and tablets in landscape: navigation on the side.
     val wide = LocalConfiguration.current.screenWidthDp >= 720
 
@@ -82,7 +85,7 @@ fun AppUi(activity: MainActivity) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 Box(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
                     when (t) {
-                        0 -> HomeScreen(activity, version) { tab = 1 }
+                        0 -> HomeScreen(activity, version, powerFocus) { tab = 1 }
                         1 -> ServersScreen(activity, version, refresh)
                         else -> SettingsScreen(activity, version, refresh)
                     }
@@ -102,7 +105,7 @@ fun AppUi(activity: MainActivity) {
                         ) {
                             Header(compact = true)
                             Spacer(Modifier.height(12.dp))
-                            for ((label, icon, i) in tabs) SideItem(label, icon, tab == i) { tab = i }
+                            for ((label, icon, i) in tabs) SideItem(label, icon, tab == i, if (tab == 0) powerFocus else null) { tab = i }
                         }
                         Column(Modifier.weight(1f).fillMaxHeight().padding(top = 16.dp)) { content(Modifier.weight(1f)) }
                     }
@@ -159,9 +162,13 @@ private fun BottomItem(label: String, icon: Painter, selected: Boolean, modifier
 }
 
 @Composable
-private fun SideItem(label: String, icon: Painter, selected: Boolean, onClick: () -> Unit) {
+private fun SideItem(label: String, icon: Painter, selected: Boolean, right: FocusRequester?, onClick: () -> Unit) {
     val bg by animateColorAsState(if (selected) Accent.copy(alpha = 0.18f) else Color.Transparent, label = "bg")
-    Tappable(Modifier.fillMaxWidth(), RoundedCornerShape(14.dp), onClick = onClick) {
+    // On the Connect page, right from the menu goes to the power button (TV remote).
+    Tappable(
+        Modifier.fillMaxWidth().focusProperties { if (right != null) this.right = right },
+        RoundedCornerShape(14.dp), onClick = onClick,
+    ) {
         Row(
             Modifier.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,

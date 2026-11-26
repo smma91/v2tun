@@ -3,7 +3,8 @@
 # (ANDROID_HOME, or D:\Android\Sdk) and JDK 17+.
 #   .\build\android\build-aar.ps1            all ABIs (release)
 #   .\build\android\build-aar.ps1 -Fast      arm64 only (testing on a phone)
-param([switch]$Fast)
+#   .\build\android\build-aar.ps1 -Targets android/arm64,android/386   (e.g. an x86 emulator)
+param([switch]$Fast, [string]$Targets = '')
 $ErrorActionPreference = 'Stop'
 $repo = Resolve-Path "$PSScriptRoot\..\.."
 Set-Location $repo
@@ -13,7 +14,7 @@ if (-not $env:ANDROID_NDK_HOME) {
   $env:ANDROID_NDK_HOME = (Get-ChildItem "$env:ANDROID_HOME\ndk" -Directory | Sort-Object Name | Select-Object -Last 1).FullName
 }
 # Large build cache: keep it off a full system drive if D: exists.
-if (Test-Path 'D:\') { $env:GOCACHE = 'D:\Android\go-cache'; $env:GOTMPDIR = 'D:\Android\tmp' }
+if (Test-Path 'D:\') { $env:GOCACHE = 'D:\Android\go-cache'; $env:GOTMPDIR = 'D:\Android\tmp'; $env:TEMP = 'D:\Android\tmp'; $env:TMP = 'D:\Android\tmp' }
 New-Item -ItemType Directory -Force $env:GOTMPDIR, 'android\app\libs' -EA 0 | Out-Null
 $gobin = Join-Path (go env GOPATH) 'bin'
 $env:PATH = "$gobin;$env:PATH"
@@ -21,7 +22,7 @@ if (-not (Get-Command gomobile -EA 0)) {
   go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.13
   go install github.com/sagernet/gomobile/cmd/gobind@v0.1.13
 }
-$targets = if ($Fast) { 'android/arm64' } else { 'android/arm64,android/arm,android/amd64' }
+$targets = if ($Targets) { $Targets } elseif ($Fast) { 'android/arm64' } else { 'android/arm64,android/arm,android/amd64' }
 # Same protocols as the desktop, except NaiveProxy (needs a native library).
 # badlinkname / -checklinkname=0: libbox reaches into Go internals (as sing-box's
 # own Android build does).

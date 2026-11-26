@@ -414,12 +414,31 @@ class V2tunVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
             .build()
         val handler = android.os.Handler(monitorThread.looper)
-        if (Build.VERSION.SDK_INT >= 31) {
-            connectivity.registerBestMatchingNetworkCallback(request, cb, handler)
-        } else if (Build.VERSION.SDK_INT >= 26) {
-            connectivity.requestNetwork(request, cb, handler)
-        } else {
-            connectivity.requestNetwork(request, cb) // callbacks on the main thread
+        try {
+            if (Build.VERSION.SDK_INT >= 31) {
+                connectivity.registerBestMatchingNetworkCallback(request, cb, handler)
+            } else if (Build.VERSION.SDK_INT >= 26) {
+                connectivity.requestNetwork(request, cb, handler)
+            } else {
+                connectivity.requestNetwork(request, cb) // callbacks on the main thread
+            }
+        } catch (e: SecurityException) {
+            // Android 6.0 wants a special permission for requestNetwork. Only
+            // listening needs none: pick the best real network on every change.
+            Log.i(TAG, "network: listening only (${e.message})")
+            val listen = object : ConnectivityManager.NetworkCallback() {
+                private fun recheck() {
+                    val best = realNetwork(null)
+                    val name = best?.let { connectivity.getLinkProperties(it)?.interfaceName }
+                    val currentName = current?.let { connectivity.getLinkProperties(it)?.interfaceName }
+                    if (best != current || name != currentName) report(best)
+                }
+                override fun onAvailable(network: Network) = recheck()
+                override fun onLost(network: Network) = recheck()
+                override fun onLinkPropertiesChanged(network: Network, lp: LinkProperties) = recheck()
+            }
+            networkCallback = listen
+            connectivity.registerNetworkCallback(request, listen)
         }
     }
 

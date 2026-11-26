@@ -65,7 +65,11 @@ import io.github.smma91.v2tun.tr
 import kotlinx.coroutines.delay
 
 @Composable
-fun HomeScreen(activity: MainActivity, version: Int, openServers: () -> Unit) {
+fun HomeScreen(
+    activity: MainActivity, version: Int,
+    powerFocus: FocusRequester = remember { FocusRequester() },
+    openServers: () -> Unit,
+) {
     val status by Vpn.status.collectAsState()
     val list = remember(version, status) { Store.servers() }
     val onPower = {
@@ -81,7 +85,7 @@ fun HomeScreen(activity: MainActivity, version: Int, openServers: () -> Unit) {
             // TV / landscape tablet: the button on one side, the details on the other.
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    PowerSection(status, tv = true, onPower)
+                    PowerSection(status, tv = true, powerFocus, onPower)
                 }
                 Spacer(Modifier.width(24.dp))
                 Column(
@@ -95,7 +99,7 @@ fun HomeScreen(activity: MainActivity, version: Int, openServers: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(20.dp))
-                PowerSection(status, tv = false, onPower)
+                PowerSection(status, tv = false, powerFocus, onPower)
                 Spacer(Modifier.height(24.dp))
                 Box(Modifier.widthIn(max = 560.dp)) { Column { Details(status, list, openServers) } }
                 Spacer(Modifier.height(24.dp))
@@ -105,14 +109,14 @@ fun HomeScreen(activity: MainActivity, version: Int, openServers: () -> Unit) {
 }
 
 @Composable
-private fun PowerSection(status: Status, tv: Boolean, onClick: () -> Unit) {
+private fun PowerSection(status: Status, tv: Boolean, focus: FocusRequester, onClick: () -> Unit) {
     val error by Vpn.error.collectAsState()
     val on = status == Status.STARTED
     val busy = status == Status.STARTING || status == Status.STOPPING
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(on) { while (on) { now = System.currentTimeMillis(); delay(1000) } }
 
-    PowerButton(status, focusFirst = tv, onClick = onClick)
+    PowerButton(status, focusFirst = tv, focus = focus, onClick = onClick)
     Spacer(Modifier.height(8.dp))
     Text(
         when (status) {
@@ -212,8 +216,7 @@ private fun Details(status: Status, list: io.github.smma91.v2tun.ServerList, ope
 }
 /** The big round button: grey when off, a spinning arc while connecting, green with a slow pulse when on. */
 @Composable
-private fun PowerButton(status: Status, focusFirst: Boolean, onClick: () -> Unit) {
-    val focus = remember { FocusRequester() }
+private fun PowerButton(status: Status, focusFirst: Boolean, focus: FocusRequester, onClick: () -> Unit) {
     if (focusFirst) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val on = status == Status.STARTED
     val busy = status == Status.STARTING || status == Status.STOPPING
