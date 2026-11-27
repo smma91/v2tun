@@ -46,7 +46,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Shrink the app code (R8): a smaller APK and much less space after install.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = if (System.getenv("V2TUN_KEYSTORE") != null) signingConfigs.getByName("release")
             else signingConfigs.getByName("debug")
         }
